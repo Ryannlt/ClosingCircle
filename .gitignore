@@ -1,0 +1,23 @@
+# Unity regenerates these on import. Nothing here is referenced by GUID - the mod ships no scene, no prefab and
+# no MonoBehaviour placed in one - so whoever clones this can safely make their own.
+*.meta
+
+# In-place editors leave these next to the source, Unity imports them, and the uMod build then fails with
+# "Unrecognized assets cannot be included in AssetBundles".
+*.bak
+*.tmp
+*.orig
+
+# IDE and build leftovers, none of which belong to the mod.
+obj/
+bin/
+*.csproj
+*.sln
+*.user
+*.suo
+.vs/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
