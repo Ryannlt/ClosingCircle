@@ -13,10 +13,12 @@ namespace ClosingCircle.ConfigVariables
         RepeatSeconds,
         Solid,
         Hud,
+        ForceDisplay,
         Color,
         Opacity,
         Height,
         Fade,
+        Blur,
         Announce,
         Bisector,
         Spread

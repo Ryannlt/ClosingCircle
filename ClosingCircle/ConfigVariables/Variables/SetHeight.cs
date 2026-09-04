@@ -1,3 +1,4 @@
+using ClosingCircle.Domain;
 // How far the wall rises above the highest ground beneath it.
 
 namespace ClosingCircle.ConfigVariables
@@ -6,7 +7,8 @@ namespace ClosingCircle.ConfigVariables
     {
         public ConfigCommandEnum CommandName => ConfigCommandEnum.Height;
 
-        public bool Validate(string value) => Parse.Float(value, out float height) && height > 0f;
+        public bool Validate(string value) =>
+            Parse.Float(value, out float height) && SettingRanges.Get("Height").Holds(height);
 
         public void Execute(string value)
         {

@@ -48,7 +48,25 @@ namespace ClosingCircle.Domain
 
             for (int i = 0; i < plan.Count; i++) CheckStage(findings, plan, context, i);
 
+            NotePlayerStages(findings, plan);
+
             return findings;
+        }
+
+        // A player centre cannot be known until its stage begins, and every stage after it nests inside, so
+        // the preview stops there. Said up front, because a preview that draws two of five stages otherwise
+        // reads as broken rather than as honest.
+        private static void NotePlayerStages(List<Finding> findings, ZonePlan plan)
+        {
+            for (int i = 0; i < plan.Count; i++)
+            {
+                if (plan.Stages[i].Mode != CentreMode.Players) continue;
+
+                Add(findings, FindingLevel.Note,
+                    $"Stage {i} closes on the players, which is not known until it starts, so preview shows " +
+                    "nothing from there on until each stage is reached.");
+                return;
+            }
         }
 
         private static void CheckStage(List<Finding> findings, ZonePlan plan, ValidationContext context, int i)
@@ -107,7 +125,10 @@ namespace ClosingCircle.Domain
         {
             for (int k = 0; k < i; k++)
             {
-                if (plan.Stages[k].Mode != CentreMode.Random) continue;
+                // Players is clamped by the same budget as Random, so it is held the same way and worth
+                // saying so for the same reason.
+                if (plan.Stages[k].Mode != CentreMode.Random && plan.Stages[k].Mode != CentreMode.Players)
+                    continue;
 
                 float budget = FairLine.Budget(plan, k);
                 if (budget >= FairLine.Unlimited) continue;

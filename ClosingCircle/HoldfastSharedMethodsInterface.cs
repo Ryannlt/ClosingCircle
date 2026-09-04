@@ -6,6 +6,7 @@ using ClosingCircle.Domain;
 using ClosingCircle.Sync;
 using ClosingCircle.Systems;
 using ClosingCircle.Visual;
+using ClosingCircle.Visual.Menu;
 using HoldfastBridge;
 using HoldfastSharedMethods;
 using UnityEngine;
@@ -39,7 +40,13 @@ namespace ClosingCircle
         public void OnIsClient(bool client, ulong steamId)
         {
             _isClient = client;
-            if (client) LocalPlayer.OnIsClient(steamId);
+
+            if (!client) return;
+
+            LocalPlayer.OnIsClient(steamId);
+
+            // Scoped by steam id, so two accounts on one machine keep their own look.
+            ClientDisplay.Load(steamId);
         }
 
         public void PassConfigVariables(string[] value) => ConfigManager.Process(value);
@@ -47,6 +54,9 @@ namespace ClosingCircle
         public void OnRoundDetails(int roundId, string serverName, string mapName, FactionCountry attackingFaction,
                                    FactionCountry defendingFaction, GameplayMode gameplayMode, GameType gameType)
         {
+            // Client side only: this decides whether the F3 hint is due again on this server.
+            if (_isClient) ClientDisplay.NoteRound(roundId, serverName);
+
             _sawRoundTimer = false;
             _warnedAboutTimer = false;
 
@@ -56,11 +66,13 @@ namespace ClosingCircle
             ZoneVisual.Reset();
             ZoneWall.Reset();
             ZoneHud.Reset();
+            ZonePanel.Reset();
             ZonePusher.Reset();
             LocalPlayer.Reset();
             StageAnnouncer.Reset();
             CentreResolver.Reset();
             PlanAudit.Reset();
+            AdminAccess.Reset();
             ZoneService.ResetRoundClock();
             PlanBroadcaster.Reset();
             PlanReceiver.Reset();
@@ -76,7 +88,12 @@ namespace ClosingCircle
             // Both of these run before the guards below: a change must reach clients even while the zone is
             // switched off, and a preview must draw on a rotation that has no round timer at all.
             if (ShouldEnforce) PlanBroadcaster.Step();
-            if (_isClient) PlanPreview.Draw(time);
+            if (_isClient)
+            {
+                ZonePanel.Step();
+                AdminAccess.Step();
+                PlanPreview.Draw(time);
+            }
 
             // Hiding has to happen on this path rather than behind an early return. Skipping the client
             // entirely is what left a zone switched off mid-round still drawn and still solid.
@@ -141,7 +158,7 @@ namespace ClosingCircle
 
             if (!ShouldEnforce) return;
 
-            PlayerRegistry.OnSpawned(playerId, playerObject);
+            PlayerRegistry.OnSpawned(playerId, playerObject, playerFaction);
             ZoneEnforcer.OnSpawned(playerId);
 
             // Catch up anyone who joined after the last push, rather than leaving them on the config's plan.
@@ -169,6 +186,10 @@ namespace ClosingCircle
         public void OnPlayerJoined(int playerId, ulong steamId, string name, string regimentTag, bool isBot)
         {
             if (_isClient) LocalPlayer.OnJoined(playerId, steamId);
+
+            // Server side this is the only place the mod is told a player is a bot, and it needs to know:
+            // a bot cannot receive the private message the zone is pushed over.
+            if (ShouldEnforce) PlayerRegistry.OnJoined(playerId, isBot);
         }
         public void OnPlayerKilledPlayer(int killerPlayerId, int victimPlayerId, EntityHealthChangedReason reason, string details) { }
         public void OnScorableAction(int playerId, int score, ScorableActionType reason) { }
@@ -181,9 +202,15 @@ namespace ClosingCircle
         public void OnPlayerEndCarry(int playerId) { }
         public void OnPlayerShout(int playerId, CharacterVoicePhrase voicePhrase) { }
         public void OnConsoleCommand(string input, string output, bool success) { }
-        public void OnRCLogin(int playerId, string inputPassword, bool isLoggedIn) { }
+        public void OnRCLogin(int playerId, string inputPassword, bool isLoggedIn)
+        {
+            if (_isClient) AdminAccess.OnLogin(isLoggedIn);
+        }
         public void OnRCCommand(int playerId, string input, string output, bool success)
         {
+            // Reaching a client at all means the server answered us, and it only answers admins.
+            if (_isClient) AdminAccess.OnCommandAnswered();
+
             if (ShouldEnforce) ConsoleCommandHandler.Process(playerId, input);
         }
         // The server pushes zone state to clients over the quiet-message channel, so this is the receiving

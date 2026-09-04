@@ -101,5 +101,22 @@ namespace ClosingCircle.Domain
 
             return int.TryParse(value, out sides) && sides >= MinSides;
         }
+
+        // The inverse, so a menu can open on the shape actually in use rather than guessing at the first entry.
+        public static string Name(int sides)
+        {
+            switch (sides)
+            {
+                case CircleSides: return "Circle";
+                case 3: return "Triangle";
+                case 4: return "Square";
+                case 5: return "Pentagon";
+                case 6: return "Hexagon";
+                case 7: return "Heptagon";
+                case 8: return "Octagon";
+            }
+
+            return sides.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        }
     }
 }

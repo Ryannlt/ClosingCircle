@@ -18,7 +18,7 @@ namespace ClosingCircle.Centres
             if (!ZoneService.HasBisector)
             {
                 Logger.Log($"Stage {context.Index} asks for a bisector centre but none is configured. " +
-                           "Holding the previous centre. Set SetBisector to x,z,heading.", LogLevel.WARNING);
+                           "Holding the previous centre. Set Bisector to x,z,heading.", LogLevel.WARNING);
                 return context.PreviousCentre;
             }
 
@@ -31,7 +31,7 @@ namespace ClosingCircle.Centres
                 // Fair and reachable cannot both be had here, so keep it reachable and make the config error
                 // loud rather than quietly playing an unfair round.
                 Logger.Log($"Stage {context.Index}: the bisector does not pass within reach of the previous " +
-                           "circle, so this stage cannot be placed fairly. Check SetBisector against the " +
+                           "circle, so this stage cannot be placed fairly. Check Bisector against the " +
                            "stage radii.", LogLevel.WARNING);
 
                 return CentreMath.ClosestOnLine(ZoneService.BisectorPoint, direction, context.PreviousCentre);

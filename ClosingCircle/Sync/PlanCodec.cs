@@ -12,7 +12,7 @@ namespace ClosingCircle.Sync
     public static class PlanCodec
     {
         public const string Marker = "[CC]";
-        public const int Version = 3;
+        public const int Version = 6;
 
         // Conservative. The client chat field caps at 255 and the server path is unmeasured, so this leaves
         // room for the header and a wide margin rather than discovering the real cap during an event.
@@ -25,13 +25,14 @@ namespace ClosingCircle.Sync
             var sb = new StringBuilder();
             sb.Append(Version);
             sb.Append("|fl:").Append(state.Enabled ? 1 : 0).Append(',').Append(state.Solid ? 1 : 0)
-              .Append(',').Append(state.Hud ? 1 : 0);
+              .Append(',').Append(state.Hud ? 1 : 0).Append(',').Append(state.ForceDisplay ? 1 : 0);
             sb.Append("|sh:").Append(state.Sides).Append(',').Append(N(state.Rotation));
             sb.Append("|st:").Append(N(state.StartRadius)).Append(',')
               .Append(N(state.StartCentre.x)).Append(',').Append(N(state.StartCentre.y));
             sb.Append("|lk:").Append(state.ColorR).Append(',').Append(state.ColorG).Append(',')
               .Append(state.ColorB).Append(',').Append(N(state.OpacityPercent)).Append(',')
-              .Append(N(state.Height)).Append(',').Append(N(state.Fade));
+              .Append(N(state.Height)).Append(',').Append(N(state.Fade)).Append(',')
+              .Append(N(state.Blur));
 
             if (state.Stages != null)
             {
@@ -39,7 +40,8 @@ namespace ClosingCircle.Sync
                 {
                     sb.Append("|s:").Append(N(stage.FromTime)).Append(',').Append(N(stage.ToTime)).Append(',')
                       .Append(N(stage.Radius)).Append(',').Append(N(stage.Centre.x)).Append(',')
-                      .Append(N(stage.Centre.y)).Append(',').Append(stage.Resolved ? 1 : 0);
+                      .Append(N(stage.Centre.y)).Append(',').Append(stage.Resolved ? 1 : 0).Append(',')
+                      .Append((int)stage.Mode);
                 }
             }
 
@@ -65,10 +67,11 @@ namespace ClosingCircle.Sync
                 switch (pair[0])
                 {
                     case "fl":
-                        if (v.Length != 3) return false;
+                        if (v.Length != 4) return false;
                         state.Enabled = v[0] == "1";
                         state.Solid = v[1] == "1";
                         state.Hud = v[2] == "1";
+                        state.ForceDisplay = v[3] == "1";
                         break;
 
                     case "sh":
@@ -86,17 +89,18 @@ namespace ClosingCircle.Sync
                         break;
 
                     case "lk":
-                        if (v.Length != 6) return false;
+                        if (v.Length != 7) return false;
                         if (!int.TryParse(v[0], NumberStyles.Integer, Invariant, out state.ColorR)) return false;
                         if (!int.TryParse(v[1], NumberStyles.Integer, Invariant, out state.ColorG)) return false;
                         if (!int.TryParse(v[2], NumberStyles.Integer, Invariant, out state.ColorB)) return false;
                         if (!F(v[3], out state.OpacityPercent)) return false;
                         if (!F(v[4], out state.Height)) return false;
                         if (!F(v[5], out state.Fade)) return false;
+                        if (!F(v[6], out state.Blur)) return false;
                         break;
 
                     case "s":
-                        if (v.Length != 6) return false;
+                        if (v.Length != 7) return false;
                         var stage = new Stage();
                         if (!F(v[0], out stage.FromTime)) return false;
                         if (!F(v[1], out stage.ToTime)) return false;
@@ -106,6 +110,11 @@ namespace ClosingCircle.Sync
 
                         // Carried so the preview can tell a decided centre from one still to be rolled.
                         stage.Resolved = v[5] == "1";
+
+                        // Nothing client side acts on the mode, but the panel names it, and without this every
+                        // stage decoded as Fixed and the Stages tab misreported the whole plan.
+                        if (!int.TryParse(v[6], NumberStyles.Integer, Invariant, out int mode)) return false;
+                        stage.Mode = (CentreMode)mode;
 
                         if (!stage.IsValid) return false;
                         state.Stages.Add(stage);

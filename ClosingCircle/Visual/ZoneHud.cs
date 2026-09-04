@@ -1,4 +1,5 @@
 using ClosingCircle.Domain;
+using ClosingCircle.Systems;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -19,9 +20,19 @@ namespace ClosingCircle.Visual
         private const string CanvasName = "Main Canvas";
         private const string TopBarName = "Top Info Bar";
 
-        // Below the game's row, using the same gap it leaves under the score bar.
+        // Below the game's row, using the same gap it leaves under the score bar. Only a fallback now: the
+        // real offset is measured, because the row above is not always there.
         private const float TopOffset = 128f;
         private const float Gap = 11f;
+
+        // A measurement outside this band means the bar was not laid out the way this assumes, so the fixed
+        // offset is used instead of putting the pills somewhere absurd.
+        private const float MinTop = 52f;
+        private const float MaxTop = 220f;
+
+        // Measuring walks the bar's graphics, so it is not worth doing every frame for something that changes
+        // when the game mode does.
+        private const float MeasureEvery = 0.25f;
 
         private const float FontSize = 19f;
         private const float PadX = 17f;
@@ -34,15 +45,24 @@ namespace ClosingCircle.Visual
         private static readonly Vector2 Reference = new Vector2(2560f, 1440f);
         private static readonly Color Panel = new Color(0f, 0f, 0f, 0.78f);
 
+        // Dim and unpanelled, so it reads as a note rather than another pill competing with the two above it.
+        private const float HintFontSize = 15f;
+        private const string Hint = "PRESS F3 FOR CIRCLE SETTINGS";
+        private static readonly Color HintColour = new Color(1f, 1f, 1f, 0.72f);
+
         private static GameObject _object;
         private static Pill _size;
         private static Pill _stage;
+        private static Pill _hint;
 
         private static Transform _topBar;
         private static bool _attached;
-
-        private static TMP_FontAsset _font;
         private static float _nextSearchAt;
+
+        private static float _top = TopOffset;
+        private static float _nextMeasureAt;
+
+        private static readonly Vector3[] Corners = new Vector3[4];
 
         private class Pill
         {
@@ -52,6 +72,7 @@ namespace ClosingCircle.Visual
 
             public bool Visible => Object.activeSelf;
             public float Width => Object.activeSelf ? Rect.sizeDelta.x : 0f;
+            public float Height => Object.activeSelf ? Rect.sizeDelta.y : 0f;
 
             public void Apply(string text)
             {
@@ -73,7 +94,7 @@ namespace ClosingCircle.Visual
                 if (Object.activeSelf) Object.SetActive(false);
             }
 
-            public void Place(float x) => Rect.anchoredPosition = new Vector2(x, -TopOffset);
+            public void Place(float x, float top) => Rect.anchoredPosition = new Vector2(x, -top);
         }
 
         public static void Reset()
@@ -85,8 +106,8 @@ namespace ClosingCircle.Visual
 
             _topBar = null;
             _attached = false;
-            _font = null;
             _nextSearchAt = 0f;
+            GameFont.Reset();
         }
 
         public static void Hide()
@@ -96,13 +117,18 @@ namespace ClosingCircle.Visual
             _object = null;
             _size = null;
             _stage = null;
+            _hint = null;
             _topBar = null;
             _attached = false;
+
+            _top = TopOffset;
+            _nextMeasureAt = 0f;
         }
 
         public static void Update(ZoneSnapshot zone, float timeRemaining)
         {
-            if (!ZoneService.Hud)
+            // The player's own switch, which falls back to the server's when they have not set one.
+            if (!ClientDisplay.Hud)
             {
                 Hide();
                 return;
@@ -117,6 +143,7 @@ namespace ClosingCircle.Visual
             {
                 _size.Hide();
                 _stage.Hide();
+                _hint.Hide();
                 return;
             }
 
@@ -127,8 +154,55 @@ namespace ClosingCircle.Visual
             float gap = _stage.Visible ? Gap : 0f;
             float total = _size.Width + gap + _stage.Width;
 
-            _size.Place(-total * 0.5f + _size.Width * 0.5f);
-            if (_stage.Visible) _stage.Place(total * 0.5f - _stage.Width * 0.5f);
+            float top = MeasuredTop();
+
+            _size.Place(-total * 0.5f + _size.Width * 0.5f, top);
+            if (_stage.Visible) _stage.Place(total * 0.5f - _stage.Width * 0.5f, top);
+
+            // A hotkey nobody knows about is a feature nobody uses, so it is advertised until it has been
+            // used once and then never again.
+            _hint.Apply(ClientDisplay.SeenPanel ? null : Hint);
+            if (_hint.Visible) _hint.Place(0f, top + _size.Height + Gap);
+        }
+
+        // How far down the game's own bar actually reaches. Free roam and some modes drop the reinforcement
+        // row entirely, and a fixed offset then leaves an obvious hole above our pills.
+        //
+        // Measured from the bar's visible graphics rather than by looking for a named object, because the name
+        // of that row lives in scene data the mod cannot read, and a measurement adapts to whatever the mode
+        // happens to show.
+        private static float MeasuredTop()
+        {
+            if (Time.unscaledTime < _nextMeasureAt) return _top;
+            _nextMeasureAt = Time.unscaledTime + MeasureEvery;
+
+            _top = TopOffset;
+
+            var bar = _topBar as RectTransform;
+            var host = _object == null ? null : _object.GetComponent<RectTransform>();
+            if (bar == null || host == null) return _top;
+
+            Graphic[] graphics = bar.GetComponentsInChildren<Graphic>(false);
+            float lowest = float.MaxValue;
+
+            for (int i = 0; i < graphics.Length; i++)
+            {
+                Graphic graphic = graphics[i];
+                if (!graphic.enabled || graphic.color.a <= 0.01f) continue;
+
+                graphic.rectTransform.GetWorldCorners(Corners);
+                lowest = Mathf.Min(lowest, Corners[0].y);
+            }
+
+            if (lowest == float.MaxValue) return _top;
+
+            // Our pills hang from the canvas top, so the bar's bottom edge has to come back in those units.
+            float local = host.InverseTransformPoint(new Vector3(0f, lowest, 0f)).y;
+            float measured = host.rect.height * 0.5f - local + Gap;
+
+            if (measured >= MinTop && measured <= MaxTop) _top = measured;
+
+            return _top;
         }
 
         // Split, because the two states want different things said: mid close the useful number is where it is
@@ -169,12 +243,12 @@ namespace ClosingCircle.Visual
         // not be up when the mod first ticks.
         private static void SearchForGameUi()
         {
-            if ((_attached && _font != null) || Time.time < _nextSearchAt) return;
+            if ((_attached && GameFont.Current != null) || Time.time < _nextSearchAt) return;
 
             _nextSearchAt = Time.time + 1f;
 
             if (!_attached) Attach();
-            if (_font == null) AdoptGameFont();
+            if (GameFont.Current == null) AdoptGameFont();
         }
 
         private static void Attach()
@@ -211,20 +285,11 @@ namespace ClosingCircle.Visual
 
         private static void AdoptGameFont()
         {
-            TextMeshProUGUI[] labels = Object.FindObjectsOfType<TextMeshProUGUI>();
+            if (!GameFont.Find()) return;
 
-            for (int i = 0; i < labels.Length; i++)
-            {
-                if (labels[i] == null || labels[i].font == null) continue;
-                if (labels[i].gameObject == _size.Object || labels[i].gameObject == _stage.Object) continue;
-
-                _font = labels[i].font;
-                _size.Label.font = _font;
-                _stage.Label.font = _font;
-
-                Logger.Log($"HUD adopted the game font '{_font.name}'.", LogLevel.DEBUG);
-                return;
-            }
+            GameFont.Apply(_size.Label);
+            GameFont.Apply(_stage.Label);
+            GameFont.Apply(_hint.Label);
         }
 
         private static void EnsureBuilt()
@@ -253,13 +318,14 @@ namespace ClosingCircle.Visual
             scaler.matchWidthOrHeight = 1f;
 
             // No GraphicRaycaster on purpose: nothing here is clickable and it must never eat a click.
-            _size = BuildPill("Size");
-            _stage = BuildPill("Stage");
+            _size = BuildPill("Size", panelled: true);
+            _stage = BuildPill("Stage", panelled: true);
+            _hint = BuildPill("Hint", panelled: false);
         }
 
-        private static Pill BuildPill(string name)
+        private static Pill BuildPill(string name, bool panelled)
         {
-            var pill = new Pill { Object = new GameObject(name) };
+            var pill = new Pill { Object = new GameObject(GameFont.Mine + name) };
             pill.Object.transform.SetParent(_object.transform, false);
 
             pill.Rect = pill.Object.AddComponent<RectTransform>();
@@ -270,7 +336,7 @@ namespace ClosingCircle.Visual
             pill.Object.AddComponent<LayoutElement>().ignoreLayout = true;
 
             var background = pill.Object.AddComponent<Image>();
-            background.color = Panel;
+            background.color = panelled ? Panel : Color.clear;
             background.raycastTarget = false;
 
             var label = new GameObject("Label");
@@ -279,13 +345,13 @@ namespace ClosingCircle.Visual
             Stretch(label.AddComponent<RectTransform>());
 
             pill.Label = label.AddComponent<TextMeshProUGUI>();
-            pill.Label.fontSize = FontSize;
-            pill.Label.color = Color.white;
+            pill.Label.fontSize = panelled ? FontSize : HintFontSize;
+            pill.Label.color = panelled ? Color.white : HintColour;
             pill.Label.alignment = TextAlignmentOptions.Center;
             pill.Label.enableWordWrapping = false;
             pill.Label.raycastTarget = false;
 
-            if (_font != null) pill.Label.font = _font;
+            GameFont.Apply(pill.Label);
 
             pill.Object.SetActive(false);
             return pill;

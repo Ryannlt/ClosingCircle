@@ -1,6 +1,7 @@
+using ClosingCircle.Domain;
 using UnityEngine;
 
-// SetOpacity:0 to 100, as a percentage, because that reads better in a config than 0.24.
+// Opacity:0 to 100, as a percentage, because that reads better in a config than 0.24.
 
 namespace ClosingCircle.ConfigVariables
 {
@@ -8,7 +9,8 @@ namespace ClosingCircle.ConfigVariables
     {
         public ConfigCommandEnum CommandName => ConfigCommandEnum.Opacity;
 
-        public bool Validate(string value) => Parse.Float(value, out float percent) && percent >= 0f && percent <= 100f;
+        public bool Validate(string value) =>
+            Parse.Float(value, out float percent) && SettingRanges.Get("Opacity").Holds(percent);
 
         public void Execute(string value)
         {

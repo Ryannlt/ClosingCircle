@@ -1,6 +1,6 @@
 using UnityEngine;
 
-// SetColor:r,g,b with each channel 0 to 255. Opacity is its own variable.
+// Color:r,g,b with each channel 0 to 255. Opacity is its own variable.
 
 namespace ClosingCircle.ConfigVariables
 {

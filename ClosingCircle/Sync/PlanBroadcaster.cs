@@ -1,5 +1,6 @@
 using ClosingCircle.Core;
 using ClosingCircle.Domain;
+using ClosingCircle.Systems;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -72,12 +73,18 @@ namespace ClosingCircle.Sync
         // The spawn and preview paths. Both also settle the retries: they have the plan now.
         public static void PushTo(int playerId)
         {
+            if (PlayerRegistry.IsBot(playerId)) return;
+
             Pending.Remove(playerId);
             Send(playerId);
         }
 
         private static void Queue(int playerId)
         {
+            // A bot has no client to draw anything and cannot be sent a private message, so queueing one only
+            // buys a refused command per retry.
+            if (PlayerRegistry.IsBot(playerId)) return;
+
             Connected[playerId] = Time.time;
             Pending[playerId] = 0;
         }
@@ -123,6 +130,7 @@ namespace ClosingCircle.Sync
             {
                 Enabled = ZoneService.Enabled,
                 Solid = ZoneService.Solid,
+                ForceDisplay = ZoneService.ForceDisplay,
                 Hud = ZoneService.Hud,
                 Sides = ZoneService.Shape.Sides,
                 Rotation = ZoneService.Shape.Rotation,
@@ -134,7 +142,8 @@ namespace ClosingCircle.Sync
                 ColorB = Mathf.RoundToInt(ZoneService.Color.b * 255f),
                 OpacityPercent = ZoneService.Opacity * 100f,
                 Height = ZoneService.Height,
-                Fade = ZoneService.Fade
+                Fade = ZoneService.Fade,
+                Blur = ZoneService.Blur
             };
         }
     }

@@ -1,3 +1,4 @@
+using ClosingCircle.Domain;
 using UnityEngine;
 
 // How much of the legal range a randomised centre may use. 0 puts the zone in the same place every round,
@@ -9,7 +10,8 @@ namespace ClosingCircle.ConfigVariables
     {
         public ConfigCommandEnum CommandName => ConfigCommandEnum.Spread;
 
-        public bool Validate(string value) => Parse.Float(value, out float spread) && spread >= 0f && spread <= 1f;
+        public bool Validate(string value) =>
+            Parse.Float(value, out float spread) && SettingRanges.Get("Spread").Holds(spread);
 
         public void Execute(string value)
         {

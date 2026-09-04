@@ -13,7 +13,7 @@ namespace ClosingCircle.ConsoleCommands
         public string Name => "stage";
         public string Usage => "stage add <from> <to> <radius> <x> <z> | " +
                                 "stage add <from> <to> <radius> <Bisector|Random> | " +
-                                "stage remove <index> | stage list | stage clear";
+                                "stage remove <index> | stage list | stage clear | stage next";
 
         public bool Validate(string[] args, out string error)
         {
@@ -24,6 +24,7 @@ namespace ClosingCircle.ConsoleCommands
             {
                 case "list":
                 case "clear":
+                case "next":
                     return true;
 
                 case "remove":
@@ -53,6 +54,10 @@ namespace ClosingCircle.ConsoleCommands
                     GameFacade.Reply(playerId, ZoneService.DescribeStages());
                     return;
 
+                case "next":
+                    Advance(playerId);
+                    return;
+
                 case "clear":
                     ZoneService.ClearStages();
                     GameFacade.Reply(playerId, "cleared every stage.");
@@ -61,7 +66,7 @@ namespace ClosingCircle.ConsoleCommands
                 case "remove":
                     Parse.Int(args[1], out int index);
                     GameFacade.Reply(playerId, ZoneService.RemoveStage(index)
-                        ? $"removed stage {index}. {ZoneService.DescribeStages()}"
+                        ? $"removed stage {index}. {ZoneService.Plan.Count} stage(s) left."
                         : $"there is no stage {index}.");
                     return;
 
@@ -69,9 +74,43 @@ namespace ClosingCircle.ConsoleCommands
                     TryRead(args, out Stage stage);
                     ZoneService.AddStage(stage);
                     ZoneService.MarkChanged();
-                    GameFacade.Reply(playerId, $"added {stage}. {ZoneService.DescribeStages()}");
+                    GameFacade.Reply(playerId, $"added {stage}. {ZoneService.Plan.Count} stage(s).");
                     return;
             }
+        }
+
+        // Brings the next stage forward. Only Revision is bumped, not PlanVersion: the nesting is untouched,
+        // so a centre already rolled for a later stage stays legal and must not be thrown away and re-rolled.
+        private static void Advance(int playerId)
+        {
+            ZonePlan plan = ZoneService.Plan;
+            float now = ZoneService.TimeRemaining;
+
+            if (plan.Count == 0)
+            {
+                GameFacade.Reply(playerId, "there are no stages to advance to.");
+                return;
+            }
+
+            if (!StageAdvance.TryPlan(plan, now, out int index, out float delta))
+            {
+                GameFacade.Reply(playerId, index < 0
+                    ? "every stage has already started."
+                    : "the next stage is already due.");
+                return;
+            }
+
+            bool waits = StageAdvance.WaitsForCurrent(plan, now, index);
+
+            plan.ShiftFrom(index, delta);
+            ZoneService.MarkChanged();
+
+            GameFacade.Reply(playerId, waits
+                ? $"stage {index} brought forward {delta:0}s; it starts as soon as stage {index - 1} finishes."
+                : $"stage {index} brought forward {delta:0}s; closing to {plan.Stages[index].Radius:0}m now.");
+
+            Logger.Log($"Stage {index} advanced by {delta:0}s, and every stage after it with it.",
+                       LogLevel.INFO);
         }
 
         private static bool TryRead(string[] args, out Stage stage)

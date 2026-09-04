@@ -1,5 +1,6 @@
 using ClosingCircle.Core;
 using ClosingCircle.Domain;
+using ClosingCircle.Systems;
 using UnityEngine;
 
 // The wall the players see. Built once per shape and then only moved and scaled, so the per-frame cost is a
@@ -53,7 +54,7 @@ namespace ClosingCircle.Visual
 
             SampleTerrain(zone);
 
-            float top = _groundHigh + ZoneService.Height;
+            float top = _groundHigh + ClientDisplay.Height;
             float floor = _groundLow - BuryDepth;
             float total = Mathf.Max(top - floor, 0.01f);
 
@@ -61,7 +62,7 @@ namespace ClosingCircle.Visual
             _object.transform.localScale = new Vector3(zone.Radius, total, zone.Radius);
 
             // Map the mesh's own 0..1 height onto the ramp so its zero point lands exactly at ground level.
-            float height = Mathf.Max(ZoneService.Height, 0.01f);
+            float height = Mathf.Max(ClientDisplay.Height, 0.01f);
             ZoneMaterial.SetRamp(_material, total / height, (floor - _groundHigh) / height);
         }
 
@@ -85,16 +86,18 @@ namespace ClosingCircle.Visual
                 _filter.sharedMesh = ZoneMeshBuilder.Build(ZoneService.Shape);
             }
 
-            if (_builtLookVersion != ZoneService.LookVersion)
+            if (_builtLookVersion != ClientDisplay.LookVersion)
             {
-                _builtLookVersion = ZoneService.LookVersion;
+                _builtLookVersion = ClientDisplay.LookVersion;
                 if (_ramp != null) Object.Destroy(_ramp);
-                _ramp = GradientTexture.Build(ZoneService.Fade);
+                _ramp = GradientTexture.Build(ClientDisplay.Fade);
 
                 if (_material == null)
-                    _material = ZoneMaterial.Build(_ramp, ZoneService.Tinted);
+                    _material = ZoneMaterial.Build(_ramp, ClientDisplay.Tinted);
                 else
-                    ZoneMaterial.Apply(_material, _ramp, ZoneService.Tinted);
+                    ZoneMaterial.Apply(_material, _ramp, ClientDisplay.Tinted);
+
+                ZoneMaterial.SetBlur(_material, ClientDisplay.Blur);
 
                 _renderer.sharedMaterial = _material;
                 _renderer.enabled = _material != null;

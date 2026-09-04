@@ -12,6 +12,9 @@ namespace ClosingCircle.Domain
         public bool Solid;
         public bool Hud;
 
+        // The server insisting its own look is what everyone sees.
+        public bool ForceDisplay;
+
         public int Sides;
         public float Rotation;
 
@@ -27,5 +30,6 @@ namespace ClosingCircle.Domain
 
         public float Height;
         public float Fade;
+        public float Blur;
     }
 }

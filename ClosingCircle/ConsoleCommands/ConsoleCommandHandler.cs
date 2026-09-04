@@ -22,6 +22,7 @@ namespace ClosingCircle.ConsoleCommands
             Register(new PreviewCommand());
             Register(new StatusCommand());
             Register(new ValidateCommand());
+            Register(new WhoamiCommand());
             Register(new PushCommand());
         }
 

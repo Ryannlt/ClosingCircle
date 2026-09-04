@@ -27,10 +27,12 @@ namespace ClosingCircle.ConfigVariables
             Register(new SetRepeatSeconds());
             Register(new SetSolid());
             Register(new SetHud());
+            Register(new SetForceDisplay());
             Register(new SetColor());
             Register(new SetOpacity());
             Register(new SetHeight());
             Register(new SetFade());
+            Register(new SetBlur());
             Register(new SetAnnounce());
             Register(new SetBisector());
             Register(new SetSpread());
@@ -40,6 +42,42 @@ namespace ClosingCircle.ConfigVariables
 
         // The single entry point for setting one tunable, shared by the config file and the rc 'set' command,
         // so there is exactly one validator per key.
+        // Validation on its own, so a batch can be checked in full before any of it is applied. Half a batch
+        // is worse than none, because the admin cannot tell which half landed.
+        public static bool TryValidate(string key, string data, out string error)
+        {
+            error = null;
+
+            IConfigVariable variable;
+            if (!Find(key, out variable, out error)) return false;
+
+            if (variable.Validate(data)) return true;
+
+            error = $"Invalid value '{data}' for '{key}'.";
+            return false;
+        }
+
+        public static bool IsKey(string key) => Enum.TryParse(key, true, out ConfigCommandEnum parsed) &&
+                                                Variables.ContainsKey(parsed);
+
+        private static bool Find(string key, out IConfigVariable variable, out string error)
+        {
+            error = null;
+            variable = null;
+
+            ConfigCommandEnum parsed;
+            if (!Enum.TryParse(key, true, out parsed))
+            {
+                error = $"Unknown setting '{key}'.";
+                return false;
+            }
+
+            if (Variables.TryGetValue(parsed, out variable)) return true;
+
+            error = $"No handler registered for '{parsed}'.";
+            return false;
+        }
+
         public static bool TryApply(string key, string data, out string error)
         {
             error = null;

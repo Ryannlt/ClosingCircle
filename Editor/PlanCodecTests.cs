@@ -12,10 +12,11 @@ namespace ClosingCircle.Tests
     public class PlanCodecTests
     {
         private static Stage MakeStage(float from, float to, float radius, float x, float z,
-                                      bool resolved = false) =>
+                                      bool resolved = false, CentreMode mode = CentreMode.Fixed) =>
             new Stage
             {
-                FromTime = from, ToTime = to, Radius = radius, Centre = new Vector2(x, z), Resolved = resolved
+                FromTime = from, ToTime = to, Radius = radius, Centre = new Vector2(x, z), Resolved = resolved,
+                Mode = mode
             };
 
         private static ZoneState MakeState(int stageCount = 2)
@@ -31,6 +32,7 @@ namespace ClosingCircle.Tests
                 Enabled = true,
                 Solid = true,
                 Hud = true,
+                ForceDisplay = true,
                 Sides = 64,
                 Rotation = 15f,
                 StartRadius = 200f,
@@ -54,6 +56,7 @@ namespace ClosingCircle.Tests
             Assert.AreEqual(original.Enabled, back.Enabled);
             Assert.AreEqual(original.Solid, back.Solid);
             Assert.AreEqual(original.Hud, back.Hud);
+            Assert.AreEqual(original.ForceDisplay, back.ForceDisplay);
             Assert.AreEqual(original.Sides, back.Sides);
             Assert.AreEqual(original.Rotation, back.Rotation, 0.001f);
             Assert.AreEqual(original.StartRadius, back.StartRadius, 0.001f);
@@ -68,6 +71,27 @@ namespace ClosingCircle.Tests
             Assert.AreEqual(30f, back.Stages[1].Centre.x, 0.001f);
             Assert.IsTrue(back.Stages[0].Resolved);
             Assert.IsFalse(back.Stages[1].Resolved);
+        }
+
+        // Every field a stage carries has to survive, not just the ones something happens to read today. Mode
+        // was left off the wire entirely, so every stage arrived as Fixed and the panel misreported the plan,
+        // and a round trip that only checked times and radii had nothing to say about it.
+        [Test]
+        public void EveryCentreModeSurvivesTheRoundTrip()
+        {
+            var modes = new[] { CentreMode.Fixed, CentreMode.Bisector, CentreMode.Random, CentreMode.Players };
+
+            foreach (CentreMode mode in modes)
+            {
+                ZoneState state = MakeState(1);
+
+                Stage stage = state.Stages[0];
+                stage.Mode = mode;
+                state.Stages[0] = stage;
+
+                Assert.IsTrue(PlanCodec.TryDecode(PlanCodec.Encode(state), out ZoneState back), mode.ToString());
+                Assert.AreEqual(mode, back.Stages[0].Mode, $"{mode} did not survive the wire.");
+            }
         }
 
         [Test]

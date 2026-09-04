@@ -18,6 +18,10 @@ namespace ClosingCircle
 
         public static int Damage = DefaultDamage;
         public static float RepeatSeconds;
+        // When set, a client's own look settings are ignored and everyone sees the server's circle. Admins
+        // are exempt, since they need to be able to see the zone the way a player reporting a problem does.
+        public static bool ForceDisplay { get; set; }
+
         public static bool Solid;
         public static bool Hud = true;
 
@@ -26,6 +30,9 @@ namespace ClosingCircle
         public static float Opacity = 0.24f;
         public static float Height = 40f;
         public static float Fade = 0.6f;
+
+        // 0 is a flat wall. Above that the wall refracts what is behind it, which a client may turn down.
+        public static float Blur;
 
         // The fair line, as a point and a heading in degrees clockwise from north. Configured rather than
         // derived, because a league may run maps whose spawns are themselves randomised.
@@ -51,12 +58,22 @@ namespace ClosingCircle
         // until the first tick, so anything reading it has to cope with not knowing yet.
         public static float RoundSeconds { get; private set; }
 
+        // The clock as it stands. Everything driven per frame is handed the value directly; this is for the
+        // few things that run outside that flow, like a command deciding what 'now' means.
+        public static float TimeRemaining { get; private set; }
+
         public static void NoteRoundClock(float timeRemaining)
         {
+            TimeRemaining = timeRemaining;
+
             if (timeRemaining > RoundSeconds) RoundSeconds = timeRemaining;
         }
 
-        public static void ResetRoundClock() => RoundSeconds = 0f;
+        public static void ResetRoundClock()
+        {
+            RoundSeconds = 0f;
+            TimeRemaining = 0f;
+        }
 
         // Bumped only when the stage list itself changes shape. The resolver watches this rather than the
         // revision, so editing something like opacity never re-rolls a circle that has already been decided.
@@ -122,7 +139,7 @@ namespace ClosingCircle
         public static string Describe() =>
             $"enabled={Enabled} shape={Shape.Sides}-gon rot={Shape.Rotation:0.#} " +
             $"start={Plan.StartRadius:0.#} at ({Plan.StartCentre.x:0.#}, {Plan.StartCentre.y:0.#}) " +
-            $"stages={Plan.Count} damage={Damage} solid={Solid} spread={Spread:0.##} " +
+            $"stages={Plan.Count} damage={Damage} solid={Solid} forceDisplay={ForceDisplay} spread={Spread:0.##} " +
             (HasBisector
                 ? $"bisector=({BisectorPoint.x:0.#}, {BisectorPoint.y:0.#}) at {BisectorHeading:0.#}deg"
                 : "bisector=none");

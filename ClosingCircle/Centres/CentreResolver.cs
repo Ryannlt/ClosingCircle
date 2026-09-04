@@ -13,6 +13,11 @@ namespace ClosingCircle.Centres
 {
     public static class CentreResolver
     {
+        // A mode that reads live state is decided slightly before its stage begins, so the push carrying the
+        // answer has time to reach the clients before the slide toward it starts. Costs nothing: PlanEvaluator
+        // ignores a future stage's centre until its FromTime whenever it was decided.
+        private const float ResolveLead = 3f;
+
         private static readonly Dictionary<CentreMode, ICentreSelector> Selectors =
             new Dictionary<CentreMode, ICentreSelector>();
 
@@ -24,6 +29,7 @@ namespace ClosingCircle.Centres
             Register(new FixedCentre());
             Register(new BisectorCentre());
             Register(new RandomCentre());
+            Register(new PlayersCentre());
         }
 
         private static void Register(ICentreSelector selector) => Selectors[selector.Mode] = selector;
@@ -53,11 +59,16 @@ namespace ClosingCircle.Centres
 
                 if (!stage.Resolved)
                 {
-                    bool due = timeRemaining < stage.FromTime;
+                    bool due = timeRemaining < stage.FromTime + ResolveLead;
 
                     // Everything after this nests inside its circle, so if this one cannot be known yet then
                     // nothing beyond it can be either.
-                    if (!due && !CanResolveEarly(stage.Mode)) return;
+                    //
+                    // Break, never return. This method ends by publishing what it decided, and returning past
+                    // that threw the notification away: a stage resolved on the same pass reached nobody, so
+                    // clients kept interpolating toward an unresolved placeholder centre and drew a circle the
+                    // server was not enforcing.
+                    if (!due && !CanResolveEarly(stage.Mode)) break;
 
                     plan.ResolveStage(i, Decide(plan, i, stage, previousCentre, previousRadius));
                     changed = true;

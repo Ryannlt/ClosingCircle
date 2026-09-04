@@ -1,4 +1,5 @@
 using ClosingCircle.Domain;
+using ClosingCircle.Visual.Menu;
 using UnityEngine;
 
 // Client side. A pushed plan simply overwrites whatever config produced, and because a push can only arrive
@@ -26,6 +27,11 @@ namespace ClosingCircle.Sync
 
             Apply(state);
             Logger.Log($"Applied a pushed zone: {ZoneService.Describe()}", LogLevel.DEBUG);
+
+            // An open panel is showing these values, so it has to follow them. Staged edits survive the
+            // rebuild, which is the point of holding them outside the widgets.
+            if (ZonePanel.IsOpen) ZonePanel.Refresh();
+
             return true;
         }
 
@@ -33,6 +39,7 @@ namespace ClosingCircle.Sync
         {
             ZoneService.Enabled = state.Enabled;
             ZoneService.Solid = state.Solid;
+            ZoneService.ForceDisplay = state.ForceDisplay;
             ZoneService.Hud = state.Hud;
 
             ZoneService.Plan.StartRadius = state.StartRadius;
@@ -45,6 +52,7 @@ namespace ClosingCircle.Sync
             ZoneService.Opacity = Mathf.Clamp01(state.OpacityPercent / 100f);
             ZoneService.Height = state.Height;
             ZoneService.Fade = state.Fade;
+            ZoneService.Blur = state.Blur;
 
             // Both of these bump the versions the visual watches, so the mesh and ramp rebuild on their own.
             ZoneService.SetShape(state.Sides, state.Rotation);

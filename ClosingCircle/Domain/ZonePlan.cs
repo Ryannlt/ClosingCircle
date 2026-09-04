@@ -69,6 +69,23 @@ namespace ClosingCircle.Domain
         }
 
         // The radius the zone settles at once every stage has run, which is what the last stage leaves behind.
+        // Moves a stage and everything after it by the same amount. Uniform, so the descending sort by
+        // FromTime still holds and the gaps between stages are unchanged.
+        public void ShiftFrom(int index, float delta)
+        {
+            if (index < 0) return;
+
+            for (int i = index; i < _stages.Count; i++)
+            {
+                Stage stage = _stages[i];
+
+                stage.FromTime += delta;
+                stage.ToTime += delta;
+
+                _stages[i] = stage;
+            }
+        }
+
         public float FinalRadius => _stages.Count == 0 ? StartRadius : _stages[_stages.Count - 1].Radius;
     }
 }

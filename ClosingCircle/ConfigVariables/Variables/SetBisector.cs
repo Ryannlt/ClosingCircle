@@ -1,6 +1,6 @@
 using UnityEngine;
 
-// SetBisector:x,z,heading. The fair line, as a point and a bearing in degrees clockwise from north. On a
+// Bisector:x,z,heading. The fair line, as a point and a bearing in degrees clockwise from north. On a
 // symmetric map that is the map centre and the front's bearing.
 
 namespace ClosingCircle.ConfigVariables

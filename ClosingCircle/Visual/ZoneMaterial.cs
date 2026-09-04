@@ -1,3 +1,4 @@
+using ClosingCircle.Systems;
 using UnityEngine;
 
 // Finds a usable shader and dresses it for transparency. Shader availability in a shipped build is the one
@@ -7,8 +8,14 @@ namespace ClosingCircle.Visual
 {
     public static class ZoneMaterial
     {
+        // Ours, shipped in Resources. Loaded by name rather than through a Material asset, which would be a
+        // GUID reference this repo cannot keep because it does not track .meta files.
+        private const string OwnShader = "ZoneWall";
+        private const string OwnShaderName = "ClosingCircle/Wall";
+
         private static readonly string[] Candidates =
         {
+            OwnShaderName,
             "Universal Render Pipeline/Unlit",
             "Universal Render Pipeline/Lit",
             "Unlit/Transparent",
@@ -29,9 +36,26 @@ namespace ClosingCircle.Visual
             }
 
             var material = new Material(shader) { name = "ClosingCircle_Wall" };
+
+            // Says which half is at fault when the wall does not refract: no _Blur means the shader never
+            // loaded, while a present _Blur and a flat wall points at the scene texture instead.
+            Logger.Log(material.HasProperty("_Blur")
+                           ? "The wall shader supports blur."
+                           : "The wall shader has no blur, so the Blur setting will do nothing.",
+                       LogLevel.INFO);
+
             MakeTransparent(material);
             Apply(material, ramp, color);
             return material;
+        }
+
+        // Zero leaves the wall exactly as flat as it was before the shader existed, so a client that turns it
+        // off gets the old look rather than a different one.
+        public static void SetBlur(Material material, float blur)
+        {
+            if (material == null || !material.HasProperty("_Blur")) return;
+
+            material.SetFloat("_Blur", Mathf.Clamp01(blur));
         }
 
         public static void Apply(Material material, Texture2D ramp, Color color)
@@ -56,6 +80,22 @@ namespace ClosingCircle.Visual
 
         private static Shader Resolve()
         {
+            // uMod's own asset API first, which is the only thing that actually reads a mod's bundle. The
+            // two lookups below cannot see it and are kept only because they cost nothing.
+            Shader own;
+            if (ModAssets.TryLoad(OwnShader, out own) && own != null)
+            {
+                Logger.Log($"Zone wall is using shader '{own.name}', shipped with the mod.", LogLevel.INFO);
+                return own;
+            }
+
+            own = Resources.Load<Shader>(OwnShader);
+            if (own != null)
+            {
+                Logger.Log($"Zone wall is using shader '{own.name}', from Resources.", LogLevel.INFO);
+                return own;
+            }
+
             foreach (string name in Candidates)
             {
                 Shader shader = Shader.Find(name);

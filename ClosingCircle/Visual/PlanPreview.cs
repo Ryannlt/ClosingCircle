@@ -1,5 +1,6 @@
 using ClosingCircle.Core;
 using ClosingCircle.Domain;
+using ClosingCircle.Systems;
 using UnityEngine;
 
 // Every stage still to come, drawn at once and faintly, so an admin can walk the schedule before the round
@@ -13,7 +14,8 @@ namespace ClosingCircle.Visual
 {
     public static class PlanPreview
     {
-        private const float PreviewHeight = 15f;
+        // Kept below the real wall's opacity because several rings overlap: the preview follows every other
+        // look setting exactly, but at full opacity a four stage plan is a solid block of colour.
         private const float OpacityShare = 0.6f;
 
         // Ground is sampled per ring vertex, so terrain can still bulge above the straight line between two
@@ -26,6 +28,7 @@ namespace ClosingCircle.Visual
         private static float _until;
 
         private static int _builtRevision = -1;
+        private static int _builtLook = -1;
         private static int _builtFrom = -1;
         private static int _builtCount = -1;
 
@@ -52,7 +55,10 @@ namespace ClosingCircle.Visual
 
             // A preview that stays on screen while an admin tunes the zone has to follow the tuning, and it has
             // to drop a stage the moment it has run.
-            if (_builtRevision != ZoneService.Revision || _builtFrom != from || _builtCount != count)
+            // LookVersion as well as Revision, so a colour or height changed while the preview is up is
+            // reflected straight away rather than at the next plan edit.
+            if (_builtRevision != ZoneService.Revision || _builtLook != ClientDisplay.LookVersion ||
+                _builtFrom != from || _builtCount != count)
                 Build(from, count);
 
             if (_meshes == null || _material == null) return;
@@ -67,17 +73,24 @@ namespace ClosingCircle.Visual
             Dispose();
 
             _builtRevision = ZoneService.Revision;
+            _builtLook = ClientDisplay.LookVersion;
             _builtFrom = from;
             _builtCount = count;
 
             if (count <= 0) return;
 
-            _ramp = GradientTexture.Build(ZoneService.Fade);
+            // Read through ClientDisplay, exactly as the live wall does, so a wall turned short and blue
+            // previews short and blue.
+            _ramp = GradientTexture.Build(ClientDisplay.Fade);
 
-            Color color = ZoneService.Tinted;
+            Color color = ClientDisplay.Tinted;
             color.a *= OpacityShare;
+
             _material = ZoneMaterial.Build(_ramp, color);
             ZoneMaterial.SetRamp(_material, 1f, 0f);
+            ZoneMaterial.SetBlur(_material, ClientDisplay.Blur);
+
+            float height = ClientDisplay.Height;
 
             ZoneShape shape = ZoneService.Shape;
             _meshes = new Mesh[count];
@@ -90,13 +103,14 @@ namespace ClosingCircle.Visual
 
                 for (int j = 0; j < ring.Length; j++) ground[j] = TerrainSampler.GetYAt(ring[j]) - BaseSink;
 
-                _meshes[i] = ZoneMeshBuilder.BuildFitted(ring, ground, PreviewHeight + BaseSink);
+                _meshes[i] = ZoneMeshBuilder.BuildFitted(ring, ground, height + BaseSink);
             }
         }
 
         private static void Invalidate()
         {
             _builtRevision = -1;
+            _builtLook = -1;
             _builtFrom = -1;
             _builtCount = -1;
         }

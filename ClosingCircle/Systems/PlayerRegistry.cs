@@ -1,3 +1,4 @@
+using HoldfastSharedMethods;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -12,16 +13,21 @@ namespace ClosingCircle.Systems
         {
             public GameObject Body;
             public bool Alive;
+            public FactionCountry Faction;
         }
 
         private static readonly Dictionary<int, Entry> Players = new Dictionary<int, Entry>();
 
         public static IEnumerable<KeyValuePair<int, Entry>> All => Players;
 
-        public static void Reset() => Players.Clear();
+        public static void Reset()
+        {
+            Players.Clear();
+            Bots.Clear();
+        }
 
-        public static void OnSpawned(int playerId, GameObject body) =>
-            Players[playerId] = new Entry { Body = body, Alive = true };
+        public static void OnSpawned(int playerId, GameObject body, FactionCountry faction) =>
+            Players[playerId] = new Entry { Body = body, Alive = true, Faction = faction };
 
         public static void OnHurt(int playerId, byte newHp)
         {
@@ -32,7 +38,23 @@ namespace ClosingCircle.Systems
             Players[playerId] = entry;
         }
 
-        public static void OnLeft(int playerId) => Players.Remove(playerId);
+        // Bots have no client, so nothing that talks to one should try. Tracked separately from the spawn
+        // record because OnPlayerJoined tells us this before OnPlayerSpawned tells us anything else.
+        private static readonly HashSet<int> Bots = new HashSet<int>();
+
+        public static void OnJoined(int playerId, bool isBot)
+        {
+            if (isBot) Bots.Add(playerId);
+            else Bots.Remove(playerId);
+        }
+
+        public static bool IsBot(int playerId) => Bots.Contains(playerId);
+
+        public static void OnLeft(int playerId)
+        {
+            Players.Remove(playerId);
+            Bots.Remove(playerId);
+        }
 
         // The full position, which the push needs because it has to cast along the step it is about to take.
         public static bool TryGetPosition(int playerId, out Vector3 position)
