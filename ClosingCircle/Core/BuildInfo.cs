@@ -14,7 +14,7 @@ namespace ClosingCircle.Core
         // Keep in step with the version in the uMod export profile, which is what the workshop shows.
         public const string Version = "1.0.0";
 
-        public const string Built = "2026-09-03";
+        public const string Built = "2026-09-04";
 
         public static string Line => $"{Name} {Version}   by {Author}   built {Built}";
     }
