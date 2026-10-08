@@ -13,7 +13,7 @@ namespace ClosingCircle.Domain
         // 0,0 is the middle of every stock Holdfast map, so it is the only default that is right by
         // accident rather than wrong by inheritance.
         public float StartRadius = 200f;
-        public Vector2 StartCentre = Vector2.zero;
+        public Vector2 StartCenter = Vector2.zero;
 
         public IReadOnlyList<Stage> Stages => _stages;
         public int Count => _stages.Count;
@@ -23,7 +23,7 @@ namespace ClosingCircle.Domain
         public void Add(Stage stage)
         {
             // Captured here rather than at every call site, so config, rc and a pushed plan all get it right.
-            stage.ConfiguredCentre = stage.Centre;
+            stage.ConfiguredCenter = stage.Center;
 
             _stages.Add(stage);
             _stages.Sort((a, b) => b.FromTime.CompareTo(a.FromTime));
@@ -38,20 +38,20 @@ namespace ClosingCircle.Domain
         }
 
         // Stage is a struct behind a read-only list, so the resolver needs a way in.
-        public void SetStageCentre(int index, Vector2 centre)
+        public void SetStageCenter(int index, Vector2 center)
         {
             if (index < 0 || index >= _stages.Count) return;
 
             Stage stage = _stages[index];
-            stage.Centre = centre;
+            stage.Center = center;
             _stages[index] = stage;
         }
 
-        public void ResolveStage(int index, Vector2 centre)
+        public void ResolveStage(int index, Vector2 center)
         {
             if (index < 0 || index >= _stages.Count) return;
 
-            SetStageCentre(index, centre);
+            SetStageCenter(index, center);
 
             Stage stage = _stages[index];
             stage.Resolved = true;
@@ -63,7 +63,7 @@ namespace ClosingCircle.Domain
             if (index < 0 || index >= _stages.Count) return;
 
             Stage stage = _stages[index];
-            stage.Centre = stage.ConfiguredCentre;
+            stage.Center = stage.ConfiguredCenter;
             stage.Resolved = false;
             _stages[index] = stage;
         }

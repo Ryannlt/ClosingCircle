@@ -9,12 +9,12 @@ namespace ClosingCircle.Domain
     {
         public static ZoneSnapshot Evaluate(ZonePlan plan, float timeRemaining)
         {
-            var current = new ZoneSnapshot { Centre = plan.StartCentre, Radius = plan.StartRadius };
+            var current = new ZoneSnapshot { Center = plan.StartCenter, Radius = plan.StartRadius };
 
             for (int i = 0; i < plan.Count; i++)
             {
                 Stage stage = plan.Stages[i];
-                var target = new ZoneSnapshot { Centre = stage.Centre, Radius = stage.Radius };
+                var target = new ZoneSnapshot { Center = stage.Center, Radius = stage.Radius };
 
                 // Still ahead of this stage, so nothing after it can have started either.
                 if (timeRemaining >= stage.FromTime) return current;
@@ -31,7 +31,7 @@ namespace ClosingCircle.Domain
 
                 return new ZoneSnapshot
                 {
-                    Centre = Vector2.Lerp(current.Centre, target.Centre, u),
+                    Center = Vector2.Lerp(current.Center, target.Center, u),
                     Radius = Mathf.Lerp(current.Radius, target.Radius, u)
                 };
             }

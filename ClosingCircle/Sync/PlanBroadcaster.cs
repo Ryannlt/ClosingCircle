@@ -8,7 +8,7 @@ using UnityEngine;
 // leave everyone drawing yesterday's plan.
 //
 // Catching up a client who arrived after the last push matters more than it looks: without the plan they fall
-// back on what their own config built, where no stage is resolved and every centre reads as its placeholder, so
+// back on what their own config built, where no stage is resolved and every center reads as its placeholder, so
 // they watch the zone close on the wrong place entirely.
 
 namespace ClosingCircle.Sync
@@ -135,7 +135,7 @@ namespace ClosingCircle.Sync
                 Sides = ZoneService.Shape.Sides,
                 Rotation = ZoneService.Shape.Rotation,
                 StartRadius = ZoneService.Plan.StartRadius,
-                StartCentre = ZoneService.Plan.StartCentre,
+                StartCenter = ZoneService.Plan.StartCenter,
                 Stages = stages,
                 ColorR = Mathf.RoundToInt(ZoneService.Color.r * 255f),
                 ColorG = Mathf.RoundToInt(ZoneService.Color.g * 255f),

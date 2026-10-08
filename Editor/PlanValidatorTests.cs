@@ -19,20 +19,20 @@ namespace ClosingCircle.Tests
             RoundSeconds = 600f
         };
 
-        private static Stage Make(float from, float to, float radius, CentreMode mode, Vector2 centre) =>
+        private static Stage Make(float from, float to, float radius, CenterMode mode, Vector2 center) =>
             new Stage
             {
                 FromTime = from, ToTime = to, Radius = radius, Mode = mode,
-                Centre = centre, ConfiguredCentre = centre
+                Center = center, ConfiguredCenter = center
             };
 
         // The exact schedule from the 02:33 log: Bisector 100, Random 40, Bisector 20.
         private static ZonePlan LoggedPlan()
         {
-            var plan = new ZonePlan { StartRadius = 200f, StartCentre = Vector2.zero };
-            plan.Add(Make(540f, 480f, 100f, CentreMode.Bisector, Vector2.zero));
-            plan.Add(Make(420f, 360f, 40f, CentreMode.Random, Vector2.zero));
-            plan.Add(Make(120f, 60f, 20f, CentreMode.Bisector, Vector2.zero));
+            var plan = new ZonePlan { StartRadius = 200f, StartCenter = Vector2.zero };
+            plan.Add(Make(540f, 480f, 100f, CenterMode.Bisector, Vector2.zero));
+            plan.Add(Make(420f, 360f, 40f, CenterMode.Random, Vector2.zero));
+            plan.Add(Make(120f, 60f, 20f, CenterMode.Bisector, Vector2.zero));
             return plan;
         }
 
@@ -42,6 +42,54 @@ namespace ClosingCircle.Tests
                 if (findings[i].Level == level) return true;
 
             return false;
+        }
+
+        // A server with no Bisector line set is perfectly legal, and every mode that does not need one has to
+        // validate cleanly on it. Found live from the panel: it built its trial stage as Bisector whatever the
+        // admin had picked, so adding a Fixed stage was refused with "asks for a bisector center".
+        [Test]
+        public void ModesThatNeedNoBisectorPassWithoutOne()
+        {
+            var bare = new ValidationContext
+            {
+                HasBisector = false,
+                Solid = true,
+                Damage = 1,
+                RoundSeconds = 800f
+            };
+
+            CenterMode[] modes = { CenterMode.Fixed, CenterMode.Random, CenterMode.Team, CenterMode.Players };
+
+            foreach (CenterMode mode in modes)
+            {
+                var plan = new ZonePlan { StartRadius = 200f, StartCenter = Vector2.zero };
+                plan.Add(Make(660f, 640f, 20f, mode, new Vector2(-71f, 4f)));
+
+                List<Finding> findings = PlanValidator.Validate(plan, bare);
+
+                Assert.IsFalse(Any(findings, FindingLevel.Error), mode + " reported an error without a bisector");
+                Assert.IsFalse(Any(findings, FindingLevel.Warning),
+                               mode + " reported a warning without a bisector");
+            }
+        }
+
+        // The other half of the same rule: a Bisector stage with no line really is an error, so the check above
+        // is not just asserting that the validator has gone quiet.
+        [Test]
+        public void ABisectorStageStillNeedsALine()
+        {
+            var bare = new ValidationContext
+            {
+                HasBisector = false,
+                Solid = true,
+                Damage = 1,
+                RoundSeconds = 800f
+            };
+
+            var plan = new ZonePlan { StartRadius = 200f, StartCenter = Vector2.zero };
+            plan.Add(Make(660f, 640f, 20f, CenterMode.Bisector, Vector2.zero));
+
+            Assert.IsTrue(Any(PlanValidator.Validate(plan, bare), FindingLevel.Error));
         }
 
         // Budgets grow backwards, because the stages between a wanderer and the fair line can pull it back.
@@ -67,9 +115,9 @@ namespace ClosingCircle.Tests
 
             float budget = FairLine.Budget(plan, 1);
             var held = new Vector2(73.9f, -budget);
-            float reach = CentreMath.AllowedRadius(40f, 20f);
+            float reach = CenterMath.AllowedRadius(40f, 20f);
 
-            Assert.IsTrue(CentreMath.TryChord(held, reach, Vector2.zero, Vector2.right,
+            Assert.IsTrue(CenterMath.TryChord(held, reach, Vector2.zero, Vector2.right,
                                               out float tMin, out float tMax));
             Assert.Greater(tMax - tMin, 1f);
         }
@@ -77,8 +125,8 @@ namespace ClosingCircle.Tests
         [Test]
         public void NoBisectorStageAheadMeansNoBudget()
         {
-            var plan = new ZonePlan { StartRadius = 200f, StartCentre = Vector2.zero };
-            plan.Add(Make(540f, 480f, 100f, CentreMode.Random, Vector2.zero));
+            var plan = new ZonePlan { StartRadius = 200f, StartCenter = Vector2.zero };
+            plan.Add(Make(540f, 480f, 100f, CenterMode.Random, Vector2.zero));
 
             Assert.AreEqual(FairLine.Unlimited, FairLine.Budget(plan, 0));
         }
@@ -99,19 +147,19 @@ namespace ClosingCircle.Tests
         [Test]
         public void AStartTooFarFromTheLineToEverReachIsAnError()
         {
-            var plan = new ZonePlan { StartRadius = 200f, StartCentre = new Vector2(0f, 500f) };
-            plan.Add(Make(540f, 480f, 190f, CentreMode.Bisector, Vector2.zero));
+            var plan = new ZonePlan { StartRadius = 200f, StartCenter = new Vector2(0f, 500f) };
+            plan.Add(Make(540f, 480f, 190f, CenterMode.Bisector, Vector2.zero));
 
             Assert.IsTrue(Any(PlanValidator.Validate(plan, Context), FindingLevel.Error));
         }
 
-        // A written centre is obeyed rather than pulled, so it can strand a later stage where Random cannot.
+        // A written center is obeyed rather than pulled, so it can strand a later stage where Random cannot.
         [Test]
-        public void AWrittenCentreThatStrandsALaterBisectorStageIsAnError()
+        public void AWrittenCenterThatStrandsALaterBisectorStageIsAnError()
         {
-            var plan = new ZonePlan { StartRadius = 200f, StartCentre = Vector2.zero };
-            plan.Add(Make(540f, 480f, 100f, CentreMode.Fixed, new Vector2(0f, 95f)));
-            plan.Add(Make(420f, 360f, 90f, CentreMode.Bisector, Vector2.zero));
+            var plan = new ZonePlan { StartRadius = 200f, StartCenter = Vector2.zero };
+            plan.Add(Make(540f, 480f, 100f, CenterMode.Fixed, new Vector2(0f, 95f)));
+            plan.Add(Make(420f, 360f, 90f, CenterMode.Bisector, Vector2.zero));
 
             Assert.IsTrue(Any(PlanValidator.Validate(plan, Context), FindingLevel.Error));
         }
@@ -128,8 +176,8 @@ namespace ClosingCircle.Tests
         [Test]
         public void ARadiusThatDoesNotShrinkIsFlagged()
         {
-            var plan = new ZonePlan { StartRadius = 100f, StartCentre = Vector2.zero };
-            plan.Add(Make(540f, 480f, 100f, CentreMode.Random, Vector2.zero));
+            var plan = new ZonePlan { StartRadius = 100f, StartCenter = Vector2.zero };
+            plan.Add(Make(540f, 480f, 100f, CenterMode.Random, Vector2.zero));
 
             Assert.IsTrue(Any(PlanValidator.Validate(plan, Context), FindingLevel.Warning));
         }
@@ -137,9 +185,9 @@ namespace ClosingCircle.Tests
         [Test]
         public void OverlappingStagesAreFlagged()
         {
-            var plan = new ZonePlan { StartRadius = 200f, StartCentre = Vector2.zero };
-            plan.Add(Make(540f, 300f, 100f, CentreMode.Random, Vector2.zero));
-            plan.Add(Make(400f, 200f, 40f, CentreMode.Random, Vector2.zero));
+            var plan = new ZonePlan { StartRadius = 200f, StartCenter = Vector2.zero };
+            plan.Add(Make(540f, 300f, 100f, CenterMode.Random, Vector2.zero));
+            plan.Add(Make(400f, 200f, 40f, CenterMode.Random, Vector2.zero));
 
             Assert.IsTrue(Any(PlanValidator.Validate(plan, Context), FindingLevel.Warning));
         }
@@ -147,12 +195,12 @@ namespace ClosingCircle.Tests
         [Test]
         public void TimesOutsideTheRoundAreFlagged()
         {
-            var early = new ZonePlan { StartRadius = 200f, StartCentre = Vector2.zero };
-            early.Add(Make(900f, 800f, 100f, CentreMode.Random, Vector2.zero));
+            var early = new ZonePlan { StartRadius = 200f, StartCenter = Vector2.zero };
+            early.Add(Make(900f, 800f, 100f, CenterMode.Random, Vector2.zero));
             Assert.IsTrue(Any(PlanValidator.Validate(early, Context), FindingLevel.Warning));
 
-            var late = new ZonePlan { StartRadius = 200f, StartCentre = Vector2.zero };
-            late.Add(Make(540f, -60f, 100f, CentreMode.Random, Vector2.zero));
+            var late = new ZonePlan { StartRadius = 200f, StartCenter = Vector2.zero };
+            late.Add(Make(540f, -60f, 100f, CenterMode.Random, Vector2.zero));
             Assert.IsTrue(Any(PlanValidator.Validate(late, Context), FindingLevel.Warning));
         }
 
@@ -169,7 +217,7 @@ namespace ClosingCircle.Tests
         [Test]
         public void AnEmptyPlanSaysSoAndDoesNotThrow()
         {
-            var plan = new ZonePlan { StartRadius = 200f, StartCentre = Vector2.zero };
+            var plan = new ZonePlan { StartRadius = 200f, StartCenter = Vector2.zero };
 
             Assert.IsTrue(Any(PlanValidator.Validate(plan, Context), FindingLevel.Warning));
             Assert.AreEqual(0, PlanValidator.Validate(null, Context).Count);

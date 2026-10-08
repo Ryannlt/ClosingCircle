@@ -93,11 +93,11 @@ namespace ClosingCircle.Systems
             GameFacade.Slap(playerId, ZoneService.Damage);
             // The zone as it stood, not just where the player was: checking a "but I was inside" report
             // otherwise means reconstructing the circle by hand from the nearest resolution line.
-            float outside = Vector2.Distance(position, zone.Centre) - zone.Radius;
+            float outside = Vector2.Distance(position, zone.Center) - zone.Radius;
 
             Logger.Log($"Player {playerId} left the zone at ({position.x:0.#}, {position.y:0.#}), " +
                        $"{outside:0.#}m outside a {zone.Radius:0.#}m circle at " +
-                       $"({zone.Centre.x:0.#}, {zone.Centre.y:0.#}), slapped for {ZoneService.Damage}.",
+                       $"({zone.Center.x:0.#}, {zone.Center.y:0.#}), slapped for {ZoneService.Damage}.",
                        LogLevel.DEBUG);
         }
     }

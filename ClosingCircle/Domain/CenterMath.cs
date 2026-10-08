@@ -1,16 +1,16 @@
 using UnityEngine;
 
-// The geometry behind placing a stage centre. Pure, and it takes unit randoms as arguments rather than calling
+// The geometry behind placing a stage center. Pure, and it takes unit randoms as arguments rather than calling
 // Random itself, so a test can drive the whole distribution instead of sampling it and hoping.
 
 namespace ClosingCircle.Domain
 {
-    public static class CentreMath
+    public static class CenterMath
     {
         // Squared metres, so it survives the scale these discs are measured at.
         private const float Tangent = 0.01f;
 
-        // How far a stage centre may sit from the previous centre while its circle stays inside the previous
+        // How far a stage center may sit from the previous center while its circle stays inside the previous
         // one. This is what guarantees the next zone is reachable from the current one.
         public static float AllowedRadius(float previousRadius, float radius) =>
             Mathf.Max(0f, previousRadius - radius);
@@ -27,12 +27,12 @@ namespace ClosingCircle.Domain
 
         // Where an infinite line crosses a disc, as the two distances along the line from linePoint. False when
         // the line misses entirely, which is the case where fairness and reachability cannot both be had.
-        public static bool TryChord(Vector2 discCentre, float discRadius, Vector2 linePoint, Vector2 direction,
+        public static bool TryChord(Vector2 discCenter, float discRadius, Vector2 linePoint, Vector2 direction,
                                     out float tMin, out float tMax)
         {
             tMin = tMax = 0f;
 
-            Vector2 offset = linePoint - discCentre;
+            Vector2 offset = linePoint - discCenter;
             float b = Vector2.Dot(offset, direction);
             float c = Vector2.Dot(offset, offset) - discRadius * discRadius;
             float discriminant = b * b - c;
@@ -47,7 +47,7 @@ namespace ClosingCircle.Domain
             return true;
         }
 
-        // Spread 0 always returns the chord midpoint, which is its closest point to the disc centre. Spread 1
+        // Spread 0 always returns the chord midpoint, which is its closest point to the disc center. Spread 1
         // uses the whole chord. Anything between narrows it symmetrically about that midpoint.
         public static float PickOnChord(float tMin, float tMax, float spread, float unit01)
         {
@@ -58,24 +58,24 @@ namespace ClosingCircle.Domain
         }
 
         // Uniform by area rather than by radius, so the middle is not over-represented.
-        public static Vector2 PointInDisc(Vector2 centre, float radius, float angle01, float radius01) =>
-            centre + Direction(angle01 * 360f) * (radius * Mathf.Sqrt(Mathf.Clamp01(radius01)));
+        public static Vector2 PointInDisc(Vector2 center, float radius, float angle01, float radius01) =>
+            center + Direction(angle01 * 360f) * (radius * Mathf.Sqrt(Mathf.Clamp01(radius01)));
 
-        // The last word on reachability. Every resolved centre goes through this, so a selector cannot break
+        // The last word on reachability. Every resolved center goes through this, so a selector cannot break
         // the nesting rule however it arrives at its answer.
-        public static Vector2 Nest(Vector2 previousCentre, float previousRadius, float radius, Vector2 desired)
+        public static Vector2 Nest(Vector2 previousCenter, float previousRadius, float radius, Vector2 desired)
         {
             float allowed = AllowedRadius(previousRadius, radius);
-            Vector2 delta = desired - previousCentre;
+            Vector2 delta = desired - previousCenter;
             float distance = delta.magnitude;
 
             if (distance <= allowed) return desired;
-            if (distance < 1e-5f) return previousCentre;
+            if (distance < 1e-5f) return previousCenter;
 
-            return previousCentre + delta / distance * allowed;
+            return previousCenter + delta / distance * allowed;
         }
 
-        // The point on a line nearest a disc centre, which is the fairest position still worth having when the
+        // The point on a line nearest a disc center, which is the fairest position still worth having when the
         // line misses the disc altogether.
         public static Vector2 ClosestOnLine(Vector2 linePoint, Vector2 direction, Vector2 target) =>
             linePoint + direction * Vector2.Dot(target - linePoint, direction);
@@ -83,11 +83,11 @@ namespace ClosingCircle.Domain
         public static float DistanceToLine(Vector2 linePoint, Vector2 direction, Vector2 target) =>
             Vector2.Distance(target, ClosestOnLine(linePoint, direction, target));
 
-        // Pulls a centre back into the band within budget of the fair line, without leaving the disc it is
+        // Pulls a center back into the band within budget of the fair line, without leaving the disc it is
         // allowed to sit in. Straight at the line first; if that leaves the disc, the disc's own closest point
         // to the line is taken instead, which always satisfies the budget because the stage before respected
         // its own.
-        public static Vector2 ClampToLine(Vector2 desired, Vector2 previousCentre, float previousRadius,
+        public static Vector2 ClampToLine(Vector2 desired, Vector2 previousCenter, float previousRadius,
                                           float radius, Vector2 linePoint, Vector2 direction, float budget)
         {
             Vector2 onLine = ClosestOnLine(linePoint, direction, desired);
@@ -100,10 +100,10 @@ namespace ClosingCircle.Domain
                 : Vector2.Lerp(desired, onLine, (distance - budget) / distance);
 
             float allowed = AllowedRadius(previousRadius, radius);
-            if (Vector2.Distance(pulled, previousCentre) <= allowed) return pulled;
+            if (Vector2.Distance(pulled, previousCenter) <= allowed) return pulled;
 
-            return Nest(previousCentre, previousRadius, radius,
-                        ClosestOnLine(linePoint, direction, previousCentre));
+            return Nest(previousCenter, previousRadius, radius,
+                        ClosestOnLine(linePoint, direction, previousCenter));
         }
     }
 }

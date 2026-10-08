@@ -144,20 +144,20 @@ namespace ClosingCircle.Systems
             if (Time.time < _nextGroundSampleAt) return;
 
             _nextGroundSampleAt = Time.time + TerrainStepSeconds;
-            _ground = TerrainSampler.GetYAt(zone.Centre);
+            _ground = TerrainSampler.GetYAt(zone.Center);
         }
 
         private static void Place(ZoneSnapshot zone)
         {
             ZoneShape shape = ZoneService.Shape;
-            Vector2[] ring = shape.Vertices(zone.Centre, zone.Radius);
+            Vector2[] ring = shape.Vertices(zone.Center, zone.Radius);
 
             for (int i = 0; i < _boxes.Length && i < ring.Length; i++)
             {
                 Vector2 a = ring[i];
                 Vector2 b = ring[(i + 1) % ring.Length];
                 Vector2 midpoint = (a + b) * 0.5f;
-                Vector2 outward = (midpoint - zone.Centre).normalized;
+                Vector2 outward = (midpoint - zone.Center).normalized;
 
                 // Pushed fully outside the boundary rather than straddling it, so a player standing at the edge
                 // is never already inside the volume the wall occupies.

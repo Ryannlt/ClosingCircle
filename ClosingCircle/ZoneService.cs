@@ -34,13 +34,18 @@ namespace ClosingCircle
         // 0 is a flat wall. Above that the wall refracts what is behind it, which a client may turn down.
         public static float Blur;
 
-        // The fair line, as a point and a heading in degrees clockwise from north. Configured rather than
-        // derived, because a league may run maps whose spawns are themselves randomised.
+        // The fair line, as a point and a heading in degrees clockwise from north. Written in the config, or read
+        // from the map's spawn layout when the map randomises its spawns (BisectorFromSpawns below).
         public static bool HasBisector;
         public static Vector2 BisectorPoint;
         public static float BisectorHeading;
 
-        // How much of the legal range a randomised centre may use. 0 is the same place every round, 1 is all
+        // Set by the CustomSpawns argument: the start center and the fair line are taken from the map's spawn
+        // layout at every round start, over the numbers above. See SpawnLayout.
+        public static bool StartFromSpawns;
+        public static bool BisectorFromSpawns;
+
+        // How much of the legal range a randomised center may use. 0 is the same place every round, 1 is all
         // of it.
         public static float Spread = 1f;
 
@@ -131,18 +136,20 @@ namespace ClosingCircle
         public static ZoneSnapshot Evaluate(float timeRemaining) => PlanEvaluator.Evaluate(Plan, timeRemaining);
 
         public static bool Contains(ZoneSnapshot zone, Vector2 point) =>
-            Shape.Contains(zone.Centre, zone.Radius, point);
+            Shape.Contains(zone.Center, zone.Radius, point);
 
         public static Vector2 NearestInside(ZoneSnapshot zone, Vector2 point, float inset) =>
-            Shape.NearestInside(zone.Centre, zone.Radius, point, inset);
+            Shape.NearestInside(zone.Center, zone.Radius, point, inset);
 
         public static string Describe() =>
             $"enabled={Enabled} shape={Shape.Sides}-gon rot={Shape.Rotation:0.#} " +
-            $"start={Plan.StartRadius:0.#} at ({Plan.StartCentre.x:0.#}, {Plan.StartCentre.y:0.#}) " +
+            $"start={Plan.StartRadius:0.#} at ({Plan.StartCenter.x:0.#}, {Plan.StartCenter.y:0.#})" +
+            (StartFromSpawns ? " from spawns " : " ") +
             $"stages={Plan.Count} damage={Damage} solid={Solid} forceDisplay={ForceDisplay} spread={Spread:0.##} " +
             (HasBisector
-                ? $"bisector=({BisectorPoint.x:0.#}, {BisectorPoint.y:0.#}) at {BisectorHeading:0.#}deg"
-                : "bisector=none");
+                ? $"bisector=({BisectorPoint.x:0.#}, {BisectorPoint.y:0.#}) at {BisectorHeading:0.#}deg" +
+                  (BisectorFromSpawns ? " from spawns" : string.Empty)
+                : BisectorFromSpawns ? "bisector=from spawns, not read yet" : "bisector=none");
 
         // One line per stage, indexed, because 'stage remove' takes the index this prints.
         public static string DescribeStages()

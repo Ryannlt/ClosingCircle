@@ -1,7 +1,9 @@
+using ClosingCircle.Systems;
 using UnityEngine;
 
 // Bisector:x,z,heading. The fair line, as a point and a bearing in degrees clockwise from north. On a
-// symmetric map that is the map centre and the front's bearing.
+// symmetric map that is the map center and the front's bearing. Bisector:CustomSpawns takes the line from the
+// spawn layout the map publishes instead, at every round start.
 
 namespace ClosingCircle.ConfigVariables
 {
@@ -9,12 +11,20 @@ namespace ClosingCircle.ConfigVariables
     {
         public ConfigCommandEnum CommandName => ConfigCommandEnum.Bisector;
 
-        public bool Validate(string value) => TryRead(value, out _, out _);
+        public bool Validate(string value) => SpawnLayout.IsArgument(value) || TryRead(value, out _, out _);
 
         public void Execute(string value)
         {
+            if (SpawnLayout.IsArgument(value))
+            {
+                ZoneService.BisectorFromSpawns = true;
+                SpawnLayout.ApplyIfRunning();
+                return;
+            }
+
             if (!TryRead(value, out Vector2 point, out float heading)) return;
 
+            ZoneService.BisectorFromSpawns = false;
             ZoneService.BisectorPoint = point;
             ZoneService.BisectorHeading = heading;
             ZoneService.HasBisector = true;

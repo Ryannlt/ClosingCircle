@@ -15,13 +15,13 @@ namespace ClosingCircle.Domain
 
         public static ZoneShape Circle => new ZoneShape { Sides = CircleSides, Rotation = 0f };
 
-        // Radius is configured centre-to-edge, so the vertices sit further out than that by this factor.
+        // Radius is configured center-to-edge, so the vertices sit further out than that by this factor.
         public float Circumradius(float radius) => radius / Mathf.Cos(Mathf.PI / Sides);
 
         public float StepDegrees => 360f / Sides;
 
-        // Outline points at a given centre and radius, ordered anticlockwise from the rotation offset.
-        public Vector2[] Vertices(Vector2 centre, float radius)
+        // Outline points at a given center and radius, ordered anticlockwise from the rotation offset.
+        public Vector2[] Vertices(Vector2 center, float radius)
         {
             var points = new Vector2[Sides];
             float circumradius = Circumradius(radius);
@@ -29,7 +29,7 @@ namespace ClosingCircle.Domain
             for (int i = 0; i < Sides; i++)
             {
                 float angle = (Rotation + i * StepDegrees) * Mathf.Deg2Rad;
-                points[i] = centre + new Vector2(Mathf.Sin(angle), Mathf.Cos(angle)) * circumradius;
+                points[i] = center + new Vector2(Mathf.Sin(angle), Mathf.Cos(angle)) * circumradius;
             }
 
             return points;
@@ -37,9 +37,9 @@ namespace ClosingCircle.Domain
 
         // O(1) rather than a loop over edges. On a regular polygon the binding edge is always the one whose
         // outward normal is nearest in bearing, so one projection settles it.
-        public bool Contains(Vector2 centre, float radius, Vector2 point)
+        public bool Contains(Vector2 center, float radius, Vector2 point)
         {
-            Vector2 delta = point - centre;
+            Vector2 delta = point - center;
             float distance = delta.magnitude;
 
             if (distance <= radius) return true;
@@ -55,15 +55,15 @@ namespace ClosingCircle.Domain
         }
 
         // The nearest point at least inset inside the boundary. Clamping to a circle instead, which is what
-        // the pusher used to do, walks somebody toward the centre rather than through the face they crossed:
+        // the pusher used to do, walks somebody toward the center rather than through the face they crossed:
         // wrong by up to a circumradius on a square, and invisible on a 64-gon.
-        public Vector2 NearestInside(Vector2 centre, float radius, Vector2 point, float inset)
+        public Vector2 NearestInside(Vector2 center, float radius, Vector2 point, float inset)
         {
             float shrunk = Mathf.Max(0f, radius - inset);
-            if (shrunk <= 0f) return centre;
-            if (Contains(centre, shrunk, point)) return point;
+            if (shrunk <= 0f) return center;
+            if (Contains(center, shrunk, point)) return point;
 
-            Vector2 delta = point - centre;
+            Vector2 delta = point - center;
             if (delta.sqrMagnitude < 1e-10f) return point;
 
             float step = StepDegrees;
@@ -73,8 +73,8 @@ namespace ClosingCircle.Domain
             int edge = Mathf.FloorToInt(Mathf.Repeat(bearing - Rotation, 360f) / step);
 
             float circumradius = Circumradius(shrunk);
-            Vector2 a = centre + CentreMath.Direction(Rotation + edge * step) * circumradius;
-            Vector2 b = centre + CentreMath.Direction(Rotation + (edge + 1) * step) * circumradius;
+            Vector2 a = center + CenterMath.Direction(Rotation + edge * step) * circumradius;
+            Vector2 b = center + CenterMath.Direction(Rotation + (edge + 1) * step) * circumradius;
 
             // Clamped to the segment, because past a corner the nearest point is the corner itself rather than
             // somewhere off the end of the edge that happens to face you.

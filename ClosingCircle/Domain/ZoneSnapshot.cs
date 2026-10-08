@@ -6,7 +6,7 @@ namespace ClosingCircle.Domain
 {
     public struct ZoneSnapshot
     {
-        public Vector2 Centre;
+        public Vector2 Center;
         public float Radius;
     }
 }

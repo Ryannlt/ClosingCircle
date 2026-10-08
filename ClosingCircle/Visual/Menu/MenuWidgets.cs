@@ -278,9 +278,9 @@ namespace ClosingCircle.Visual.Menu
             Panel(list, Raised);
 
             RectTransform listRect = list.GetComponent<RectTransform>();
-            // Anchored to the overlay's centre, because that is where ScreenPointToLocalPointInRectangle
+            // Anchored to the overlay's center, because that is where ScreenPointToLocalPointInRectangle
             // measures from: a local point is relative to the rect's pivot, while anchoredPosition is relative
-            // to the anchor. Anchoring at the corner while positioning from the centre put the list half a
+            // to the anchor. Anchoring at the corner while positioning from the center put the list half a
             // window down and to the left.
             listRect.anchorMin = listRect.anchorMax = new Vector2(0.5f, 0.5f);
 

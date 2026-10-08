@@ -2,8 +2,8 @@ using ClosingCircle.Domain;
 using System;
 using UnityEngine;
 
-// AddStage:from,to,radius,centreX,centreZ for a fixed centre, or AddStage:from,to,radius,mode when the mode
-// decides the centre. The mode replaces the coordinates rather than sitting beside them, because writing a
+// AddStage:from,to,radius,centerX,centerZ for a fixed center, or AddStage:from,to,radius,mode when the mode
+// decides the center. The mode replaces the coordinates rather than sitting beside them, because writing a
 // position for a stage that will not use it is noise that reads as though it means something.
 
 namespace ClosingCircle.ConfigVariables
@@ -34,14 +34,14 @@ namespace ClosingCircle.ConfigVariables
             if (!Parse.Float(parts[1], out float to)) return false;
             if (!Parse.Float(parts[2], out float radius)) return false;
 
-            var mode = CentreMode.Fixed;
-            var centre = Vector2.zero;
+            var mode = CenterMode.Fixed;
+            var center = Vector2.zero;
 
             if (parts.Length == FixedFields)
             {
                 if (!Parse.Float(parts[3], out float x)) return false;
                 if (!Parse.Float(parts[4], out float z)) return false;
-                centre = new Vector2(x, z);
+                center = new Vector2(x, z);
             }
             else
             {
@@ -49,14 +49,14 @@ namespace ClosingCircle.ConfigVariables
 
                 if (!Enum.TryParse(name, true, out mode))
                 {
-                    Logger.Log($"Rejected stage '{value}': '{name}' is not a centre mode. " +
-                               "Use Bisector or Random, or give x,z for a fixed centre.", LogLevel.WARNING);
+                    Logger.Log($"Rejected stage '{value}': '{name}' is not a center mode. " +
+                               "Use Bisector or Random, or give x,z for a fixed center.", LogLevel.WARNING);
                     return false;
                 }
 
-                if (mode == CentreMode.Fixed)
+                if (mode == CenterMode.Fixed)
                 {
-                    Logger.Log($"Rejected stage '{value}': a fixed centre needs coordinates. " +
+                    Logger.Log($"Rejected stage '{value}': a fixed center needs coordinates. " +
                                "Write from,to,radius,x,z instead.", LogLevel.WARNING);
                     return false;
                 }
@@ -64,7 +64,7 @@ namespace ClosingCircle.ConfigVariables
 
             stage = new Stage
             {
-                FromTime = from, ToTime = to, Radius = radius, Centre = centre, Mode = mode
+                FromTime = from, ToTime = to, Radius = radius, Center = center, Mode = mode
             };
 
             if (!stage.IsValid)

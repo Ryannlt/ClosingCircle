@@ -19,7 +19,7 @@ namespace ClosingCircle.Domain
         public float Rotation;
 
         public float StartRadius;
-        public Vector2 StartCentre;
+        public Vector2 StartCenter;
         public List<Stage> Stages;
 
         // Color channels stay 0-255 and opacity stays a percentage, matching both the config and the wire.

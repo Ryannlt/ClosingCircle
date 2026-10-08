@@ -10,7 +10,7 @@ namespace ClosingCircle.Tests
         // Three stages back to back: 540-480, 420-360, 300-240.
         private static ZonePlan MakePlan(params bool[] resolved)
         {
-            var plan = new ZonePlan { StartRadius = 200f, StartCentre = Vector2.zero };
+            var plan = new ZonePlan { StartRadius = 200f, StartCenter = Vector2.zero };
 
             var times = new[] { new Vector2(540f, 480f), new Vector2(420f, 360f), new Vector2(300f, 240f) };
 
@@ -20,7 +20,7 @@ namespace ClosingCircle.Tests
                     FromTime = times[i].x,
                     ToTime = times[i].y,
                     Radius = 100f - i * 20f,
-                    Mode = CentreMode.Bisector,
+                    Mode = CenterMode.Bisector,
                     Resolved = resolved[i]
                 });
 

@@ -21,7 +21,7 @@ namespace ClosingCircle.ConfigVariables
             Register(new SetShape());
             Register(new SetRotation());
             Register(new SetStartRadius());
-            Register(new SetStartCentre());
+            Register(new SetStartCenter());
             Register(new AddStage());
             Register(new SetDamage());
             Register(new SetRepeatSeconds());

@@ -1,4 +1,4 @@
-using ClosingCircle.Centres;
+using ClosingCircle.Centers;
 using ClosingCircle.ConfigVariables;
 using ClosingCircle.ConsoleCommands;
 using ClosingCircle.Core;
@@ -66,17 +66,23 @@ namespace ClosingCircle
             ZoneVisual.Reset();
             ZoneWall.Reset();
             ZoneHud.Reset();
-            ZonePanel.Reset();
+            // Client only. The panel's reset releases the game's input lock with a client console command, which
+            // a server refuses as an unknown parameter every round.
+            if (_isClient) ZonePanel.Reset();
             ZonePusher.Reset();
             LocalPlayer.Reset();
             StageAnnouncer.Reset();
-            CentreResolver.Reset();
+            CenterResolver.Reset();
             PlanAudit.Reset();
             AdminAccess.Reset();
             ZoneService.ResetRoundClock();
             PlanBroadcaster.Reset();
             PlanReceiver.Reset();
             PlanPreview.Reset();
+
+            // After the resets, so the broadcaster pushes what it reads, and before the round line, so that line
+            // shows where the circle will really start.
+            SpawnLayout.Apply();
 
             Logger.Log($"Round {roundId} on {mapName}. {ZoneService.Describe()}", LogLevel.INFO);
         }
@@ -120,8 +126,8 @@ namespace ClosingCircle
                 PlanAudit.ReportOnce();
 
                 // Before the enforcer, so a stage that comes due this frame is enforced at its resolved
-                // centre rather than at the one it is about to stop using.
-                CentreResolver.Step(time);
+                // center rather than at the one it is about to stop using.
+                CenterResolver.Step(time);
                 ZoneEnforcer.Step(time);
                 ZonePusher.Step(ZoneService.Evaluate(time));
                 StageAnnouncer.Step(time);

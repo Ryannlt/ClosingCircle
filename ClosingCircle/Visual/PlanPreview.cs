@@ -7,7 +7,7 @@ using UnityEngine;
 // starts. Each ring is a mesh fitted to the ground it stands on, because a preview that floats over a slope is
 // telling you the wrong thing about exactly the question it exists to answer.
 //
-// Only stages whose centre has actually been decided are drawn, and only until they have run. A stage waiting
+// Only stages whose center has actually been decided are drawn, and only until they have run. A stage waiting
 // on something the mod cannot know yet is left out rather than guessed at.
 
 namespace ClosingCircle.Visual
@@ -98,7 +98,7 @@ namespace ClosingCircle.Visual
             for (int i = 0; i < count; i++)
             {
                 Stage stage = ZoneService.Plan.Stages[from + i];
-                Vector2[] ring = shape.Vertices(stage.Centre, stage.Radius);
+                Vector2[] ring = shape.Vertices(stage.Center, stage.Radius);
                 var ground = new float[ring.Length];
 
                 for (int j = 0; j < ring.Length; j++) ground[j] = TerrainSampler.GetYAt(ring[j]) - BaseSink;

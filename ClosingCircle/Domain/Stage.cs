@@ -9,23 +9,23 @@ namespace ClosingCircle.Domain
         public float FromTime;
         public float ToTime;
         public float Radius;
-        public Vector2 Centre;
-        public CentreMode Mode;
+        public Vector2 Center;
+        public CenterMode Mode;
 
-        // The centre as written. Kept apart from Centre so resolving never destroys the configuration and a
+        // The center as written. Kept apart from Center so resolving never destroys the configuration and a
         // second round cannot randomise from the first round's result.
-        public Vector2 ConfiguredCentre;
+        public Vector2 ConfiguredCenter;
 
-        // Set once the centre has been decided for this round, so a stage is never re-rolled mid-close.
+        // Set once the center has been decided for this round, so a stage is never re-rolled mid-close.
         public bool Resolved;
 
         public bool IsValid => FromTime > ToTime && Radius > 0f;
 
         public override string ToString()
         {
-            // An unresolved mode has not rolled yet, and its centre is a placeholder rather than a decision.
-            string where = Resolved || Mode == CentreMode.Fixed
-                ? $"at ({Centre.x:0.#}, {Centre.y:0.#})"
+            // An unresolved mode has not rolled yet, and its center is a placeholder rather than a decision.
+            string where = Resolved || Mode == CenterMode.Fixed
+                ? $"at ({Center.x:0.#}, {Center.y:0.#})"
                 : "pending";
 
             return $"from {FromTime:0}s to {ToTime:0}s, radius {Radius:0.#} {where} [{Mode}]";

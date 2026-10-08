@@ -16,11 +16,13 @@ warning and stays inactive.
 
 - [Config variables](#config-variables)
 - [Stages](#stages)
-- [Centre modes](#centre-modes)
+- [Center modes](#center-modes)
+- [Following Custom Spawns](#following-custom-spawns)
 - [Runtime commands](#runtime-commands)
 - [The settings panel](#the-settings-panel)
 - [The HUD](#the-hud)
-- [Example config](#example-config)
+- [Example configs](#example-configs)
+- [Changes](#changes)
 
 ## Config variables
 
@@ -34,8 +36,8 @@ Use `mod_variable` for every rotation or `mod_variable_local` for one. Written a
 | `EnableCircle` | `true` or `false` | `true` |
 | `Shape` | `Circle` `Triangle` `Square` `Pentagon` `Hexagon` `Heptagon` `Octagon`, or a side count of 3 or more | `Circle` |
 | `Rotation` | degrees to turn the shape | `0` |
-| `StartRadius` | metres from centre to edge before the first stage | `200` |
-| `StartCentre` | `x,z` | `0,0` |
+| `StartRadius` | metres from center to edge before the first stage | `200` |
+| `StartCenter` | `x,z`, or `CustomSpawns` to start on the map's spawns | `0,0` |
 | `AddStage` | see [Stages](#stages) | none |
 
 ### Enforcement
@@ -53,8 +55,8 @@ inside instead. Free roam passes through the boundary and is never slapped or pu
 
 | Variable | Data | Default |
 | --- | --- | --- |
-| `Bisector` | `x,z,heading` in degrees clockwise from north | none |
-| `Spread` | 0 to 1, how much of the legal range a randomised centre may use | `1` |
+| `Bisector` | `x,z,heading` in degrees clockwise from north, or `CustomSpawns` to take the line from the map's spawns | none |
+| `Spread` | 0 to 1, how much of the legal range a randomised center may use | `1` |
 
 ### Appearance
 
@@ -91,20 +93,21 @@ ClosingCircle:AddStage:<fromTime>,<toTime>,<radius>,<mode>
 Times are **seconds remaining in the round**, so `fromTime` is the larger number. The zone holds still until
 `fromTime`, slides to the new circle by `toTime`, then holds again.
 
-Radius means centre to edge, so a square with radius 100 is a 200 metre box.
+Radius means center to edge, so a square with radius 100 is a 200 metre box.
 
 Every stage is kept **inside the one before it**, so the next zone is always reachable. A stage can only move
-its centre by `previousRadius - thisRadius`. A stage that barely shrinks can barely move.
+its center by `previousRadius - thisRadius`. A stage that barely shrinks can barely move.
 
-## Centre modes
+## Center modes
 
-A stage either states its centre as `x,z` or names a mode that picks one. The mode replaces the coordinates.
+A stage either states its center as `x,z` or names a mode that picks one. The mode replaces the coordinates.
 
-| Mode | Where the centre lands |
+| Mode | Where the center lands |
 | --- | --- |
 | `Bisector` | Randomly along the line set by `Bisector` |
 | `Random` | Randomly inside the previous circle |
-| `Players` | Between where the two teams actually are |
+| `Team` | Between where the two teams actually are |
+| `Players` | On everyone alive, counted as individuals |
 
 ### Bisector
 
@@ -114,19 +117,65 @@ them equidistant, so the zone can move without giving either side ground. Set th
 `Spread` controls how much of the legal range is used. `0` puts the zone in the same place every round, `1`
 uses the full range, and values between narrow it symmetrically.
 
-A `Random` or `Players` stage before a `Bisector` stage is held close enough to the line that the later stage
-can still reach it. `validate` reports which stages are being held and by how much.
+A `Random`, `Team` or `Players` stage before a `Bisector` stage is held close enough to the line that the later
+stage can still reach it. `validate` reports which stages are being held and by how much.
+
+### Team
+
+Takes each faction's center of mass, then the point between them. Numbers do not count, positions do, so twenty
+players against five gives the same center as five against five.
+
+If one side is wiped it closes on the survivors. If nobody is alive it holds still.
 
 ### Players
 
-Takes each faction's centre of mass, then the point between them. Numbers do not count, positions do, so twenty
-players against five gives the same centre as five against five.
+Averages everyone alive as individuals, with no regard for which side they are on.
 
-Only players who have spawned and are alive count, so free-roaming admins and spectators never pull it. Bots
-count like anyone else. If one side is wiped it closes on the survivors. If nobody is alive it holds still.
+This is not a simpler `Team`, and the difference is the whole reason to pick one over the other. Because it
+counts bodies, the side with more players on the field pulls the zone towards its own ground: twenty against
+five closes near the twenty. That is wrong for a line battle and right for a free-for-all, a last man standing
+round, or anything where sides are not the thing being balanced. Use `Team` when the sides are meant to be
+even, `Players` when you just want the zone to follow the fighting.
 
-A `Players` centre is not known until its stage begins, so `preview` shows nothing from that stage onwards
-until each one is reached.
+If nobody is alive it holds still.
+
+### What both live modes share
+
+Only players who have spawned and are alive count, so free-roaming admins and spectators never pull either one.
+Bots count like anyone else.
+
+Neither center is known until its stage begins, so `preview` shows nothing from that stage onwards until each
+one is reached.
+
+## Following Custom Spawns
+
+A map built with Holdfast Custom Spawns can move its spawns every round. Two settings can follow them instead of
+fixed numbers:
+
+```
+mod_variable_local ClosingCircle:StartCenter:CustomSpawns
+mod_variable_local ClosingCircle:Bisector:CustomSpawns
+```
+
+- `StartCenter:CustomSpawns` starts the circle on the center between the spawns.
+- `Bisector:CustomSpawns` sets the fair line through that center, square to the line between the spawns, so
+  `Bisector` stages keep both sides the same distance from the zone.
+
+Use either one alone or both. The start radius, every stage radius and any `x,z` stage stay as written, so set
+them to suit the spawn `Distance` of that rotation.
+
+Both are read at the start of every round, on the server and on every client. The log shows what was taken:
+
+```
+[ClosingCircle] Following the map's spawns: start center (12.5, -40), fair line through (12.5, -40) at 98.3deg.
+```
+
+A map without a spawn layout logs a warning and the round plays with the configured values. A `Bisector` stage
+with no line then holds its previous center.
+
+Any map can offer a spawn layout without Custom Spawns. Place an empty object named `Holdfast Spawn Layout`
+outside the Client container, at the middle between the spawns, turned so its blue arrow points from one spawn
+to the other.
 
 ## Runtime commands
 
@@ -137,8 +186,8 @@ handing the command to mods. That message is expected. The real answer arrives a
 
 | Command | Effect |
 | --- | --- |
-| `rc closingCircle stage add <from> <to> <radius> <x> <z>` | Add a stage with a written centre |
-| `rc closingCircle stage add <from> <to> <radius> <mode>` | Add a stage with a centre mode |
+| `rc closingCircle stage add <from> <to> <radius> <x> <z>` | Add a stage with a written center |
+| `rc closingCircle stage add <from> <to> <radius> <mode>` | Add a stage with a center mode |
 | `rc closingCircle stage remove <index>` | Remove one stage by the index `stage list` prints |
 | `rc closingCircle stage list` | List every stage |
 | `rc closingCircle stage clear` | Remove every stage |
@@ -214,7 +263,9 @@ move up to fill the gap when that row is not shown.
 Beneath them, `PRESS F3 FOR CIRCLE SETTINGS` shows until the panel has been opened, and returns once per
 server session.
 
-## Example config
+## Example configs
+
+### A fixed map
 
 A fifteen minute round, closing four times, with the last two stages on the fair line.
 
@@ -223,7 +274,7 @@ mod_variable_local ClosingCircle:EnableCircle:true
 mod_variable_local ClosingCircle:Shape:Hexagon
 mod_variable_local ClosingCircle:Rotation:15
 mod_variable_local ClosingCircle:StartRadius:220
-mod_variable_local ClosingCircle:StartCentre:0,0
+mod_variable_local ClosingCircle:StartCenter:0,0
 
 mod_variable_local ClosingCircle:Damage:150
 mod_variable_local ClosingCircle:RepeatSeconds:5
@@ -244,3 +295,32 @@ mod_variable_local ClosingCircle:AddStage:600,510,120,Random
 mod_variable_local ClosingCircle:AddStage:420,330,80,Bisector
 mod_variable_local ClosingCircle:AddStage:240,150,40,Bisector
 ```
+
+### A map whose spawns move
+
+A ten minute round on a Holdfast Custom Spawns map, closing three times along the fair line between the spawns.
+A start radius of 220 holds two camps 300 m apart. Raise it for a longer spawn `Distance` or for 4 spawns.
+
+```
+mod_variable_local ClosingCircle:StartRadius:220
+mod_variable_local ClosingCircle:StartCenter:CustomSpawns
+mod_variable_local ClosingCircle:Bisector:CustomSpawns
+
+mod_variable_local ClosingCircle:AddStage:540,450,150,Bisector
+mod_variable_local ClosingCircle:AddStage:390,300,90,Bisector
+mod_variable_local ClosingCircle:AddStage:240,150,45,Bisector
+```
+
+## Changes
+
+### 1.1.0
+
+- `StartCenter` and `Bisector` take `CustomSpawns`, so the circle can follow a map whose spawns move every round.
+  See [Following Custom Spawns](#following-custom-spawns).
+- Centre is spelled Center everywhere. **`StartCentre` is now `StartCenter`.** Update your configs: the old name
+  logs `Unknown setting 'StartCentre'` and is ignored.
+- The server no longer logs a refused `set shouldUnlockMouse` command at the start of every round.
+
+### 1.0.0
+
+- First release.

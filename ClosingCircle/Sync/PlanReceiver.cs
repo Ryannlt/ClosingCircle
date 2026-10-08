@@ -43,7 +43,7 @@ namespace ClosingCircle.Sync
             ZoneService.Hud = state.Hud;
 
             ZoneService.Plan.StartRadius = state.StartRadius;
-            ZoneService.Plan.StartCentre = state.StartCentre;
+            ZoneService.Plan.StartCenter = state.StartCenter;
             ZoneService.Plan.Clear();
             if (state.Stages != null)
                 foreach (Stage stage in state.Stages) ZoneService.Plan.Add(stage);

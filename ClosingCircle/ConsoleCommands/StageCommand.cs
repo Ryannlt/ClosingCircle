@@ -34,7 +34,7 @@ namespace ClosingCircle.ConsoleCommands
                 case "add":
                     if (args.Length != 6 && args.Length != 5)
                     {
-                        error = "add needs from, to, radius and then either x z or a centre mode.";
+                        error = "add needs from, to, radius and then either x z or a center mode.";
                         return false;
                     }
                     if (!TryRead(args, out Stage stage)) { error = "add could not read those numbers."; return false; }
@@ -80,7 +80,7 @@ namespace ClosingCircle.ConsoleCommands
         }
 
         // Brings the next stage forward. Only Revision is bumped, not PlanVersion: the nesting is untouched,
-        // so a centre already rolled for a later stage stays legal and must not be thrown away and re-rolled.
+        // so a center already rolled for a later stage stays legal and must not be thrown away and re-rolled.
         private static void Advance(int playerId)
         {
             ZonePlan plan = ZoneService.Plan;
@@ -121,23 +121,23 @@ namespace ClosingCircle.ConsoleCommands
             if (!Parse.Float(args[2], out float to)) return false;
             if (!Parse.Float(args[3], out float radius)) return false;
 
-            var mode = CentreMode.Fixed;
-            var centre = Vector2.zero;
+            var mode = CenterMode.Fixed;
+            var center = Vector2.zero;
 
             if (args.Length == 6)
             {
                 if (!Parse.Float(args[4], out float x)) return false;
                 if (!Parse.Float(args[5], out float z)) return false;
-                centre = new Vector2(x, z);
+                center = new Vector2(x, z);
             }
-            else if (!Enum.TryParse(args[4], true, out mode) || mode == CentreMode.Fixed)
+            else if (!Enum.TryParse(args[4], true, out mode) || mode == CenterMode.Fixed)
             {
                 return false;
             }
 
             stage = new Stage
             {
-                FromTime = from, ToTime = to, Radius = radius, Centre = centre, Mode = mode
+                FromTime = from, ToTime = to, Radius = radius, Center = center, Mode = mode
             };
             return true;
         }

@@ -7,7 +7,7 @@ namespace ClosingCircle.ConfigVariables
         Shape,
         Rotation,
         StartRadius,
-        StartCentre,
+        StartCenter,
         AddStage,
         Damage,
         RepeatSeconds,

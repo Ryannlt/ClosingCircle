@@ -16,7 +16,7 @@ namespace ClosingCircle.Visual.Menu
         private static readonly string[] Shapes =
             { "Circle", "Triangle", "Square", "Pentagon", "Hexagon", "Heptagon", "Octagon" };
 
-        private static readonly string[] Modes = { "Bisector", "Random", "Players", "Fixed" };
+        private static readonly string[] Modes = { "Bisector", "Random", "Team", "Players", "Fixed" };
 
         // Zone settings reach everyone, so they are staged here and sent only on Apply. Static so a push
         // landing mid-edit rebuilds the tab without throwing away what the admin was in the middle of typing.
@@ -78,7 +78,7 @@ namespace ClosingCircle.Visual.Menu
                 ClientDisplay.Apply(now);
             });
 
-            Note(parent, "Circle size and stage countdown, top centre. Hidden for everyone if the server has " +
+            Note(parent, "Circle size and stage countdown, top center. Hidden for everyone if the server has " +
                          "turned it off in config.");
 
             GameObject buttons = LineRow(parent);
@@ -276,10 +276,10 @@ namespace ClosingCircle.Visual.Menu
             MenuWidgets.Field(bisectorRow.transform, Staged("Bisector", Bisector()), 260f,
                               value => Stage("Bisector", value));
 
-            GameObject centreRow = LineRow(parent);
-            Caption(centreRow.transform, "Start centre", 230f, Dirty("StartCentre"));
-            MenuWidgets.Field(centreRow.transform, Staged("StartCentre", Point(ZoneService.Plan.StartCentre)),
-                              260f, value => Stage("StartCentre", value));
+            GameObject centerRow = LineRow(parent);
+            Caption(centerRow.transform, "Start center", 230f, Dirty("StartCenter"));
+            MenuWidgets.Field(centerRow.transform, Staged("StartCenter", Point(ZoneService.Plan.StartCenter)),
+                              260f, value => Stage("StartCenter", value));
 
             BuildConfirm(parent);
         }
@@ -414,8 +414,30 @@ namespace ClosingCircle.Visual.Menu
             TMP_InputField to = MenuWidgets.Field(builder.transform, "480", 120f, null);
             TMP_InputField radius = MenuWidgets.Field(builder.transform, "100", 120f, null);
 
+            // Declared before the dropdown so its callback can close over them, then created after it so they
+            // sit to its right in the row.
+            TMP_InputField x = null;
+            TMP_InputField z = null;
+
             string mode = Modes[0];
-            MenuWidgets.Choose(builder.transform, Modes, 0, 170f, value => mode = value);
+            MenuWidgets.Choose(builder.transform, Modes, 0, 150f, value =>
+            {
+                mode = value;
+
+                // Only a fixed center takes coordinates. Every other mode picks its own, and a written center
+                // replaces the mode rather than sitting beside it.
+                bool written = Mode(value) == CenterMode.Fixed;
+                if (x != null) x.gameObject.SetActive(written);
+                if (z != null) z.gameObject.SetActive(written);
+            });
+
+            Vector2 start = plan.StartCenter;
+            x = MenuWidgets.Field(builder.transform, start.x.ToString("0.#"), 90f, null);
+            z = MenuWidgets.Field(builder.transform, start.y.ToString("0.#"), 90f, null);
+
+            // Hidden until Fixed is picked, and the row's layout closes the gap while they are off.
+            x.gameObject.SetActive(Mode(mode) == CenterMode.Fixed);
+            z.gameObject.SetActive(Mode(mode) == CenterMode.Fixed);
 
             TextMeshProUGUI problems = MenuWidgets.Text(parent, string.Empty, MenuWidgets.Tiny,
                                                         MenuWidgets.Accent);
@@ -431,9 +453,18 @@ namespace ClosingCircle.Visual.Menu
                     return;
                 }
 
+                bool written = Mode(mode) == CenterMode.Fixed;
+
+                float cx = 0f, cz = 0f;
+                if (written && (!float.TryParse(x.text, out cx) || !float.TryParse(z.text, out cz)))
+                {
+                    problems.text = "A fixed center needs x and z as numbers.";
+                    return;
+                }
+
                 // The server's own validator, run here first, so an illegal stage is refused before it is sent
                 // rather than warned about after.
-                string refusal = Refuse(f, t, r);
+                string refusal = Refuse(f, t, r, Mode(mode), new Vector2(cx, cz));
                 if (refusal != null)
                 {
                     problems.text = refusal;
@@ -441,7 +472,9 @@ namespace ClosingCircle.Visual.Menu
                 }
 
                 problems.text = string.Empty;
-                Send(MenuCommands.AddStage(f, t, r, Mode(mode)));
+                Send(written
+                    ? MenuCommands.AddStage(f, t, r, new Vector2(cx, cz))
+                    : MenuCommands.AddStage(f, t, r, Mode(mode)));
                 ZonePanel.Refresh();
             }, primary: true);
 
@@ -480,16 +513,20 @@ namespace ClosingCircle.Visual.Menu
 
         // Builds the plan the stage would produce and asks the real validator about it, so the panel and the
         // server can never disagree on what is legal.
-        private static string Refuse(float from, float to, float radius)
+        //
+        // The trial stage has to carry the mode actually being added. Hard-coding Bisector here made the panel
+        // validate a stage nobody was adding, so picking any other mode with no Bisector line configured was
+        // refused with a bisector error.
+        private static string Refuse(float from, float to, float radius, CenterMode mode, Vector2 center)
         {
             ZonePlan plan = ZoneService.Plan;
-            var trial = new ZonePlan { StartRadius = plan.StartRadius, StartCentre = plan.StartCentre };
+            var trial = new ZonePlan { StartRadius = plan.StartRadius, StartCenter = plan.StartCenter };
 
             for (int i = 0; i < plan.Count; i++) trial.Add(plan.Stages[i]);
 
             trial.Add(new Stage
             {
-                FromTime = from, ToTime = to, Radius = radius, Mode = CentreMode.Bisector
+                FromTime = from, ToTime = to, Radius = radius, Center = center, Mode = mode
             });
 
             var context = new ValidationContext
@@ -617,7 +654,7 @@ namespace ClosingCircle.Visual.Menu
         }
 
         // The height matters: a LayoutElement beats what the children want, so a row holding something taller
-        // than it says is centred in its own band and spills over its neighbours in both directions.
+        // than it says is centered in its own band and spills over its neighbours in both directions.
         private static GameObject LineRow(Transform parent, float height = 38f)
         {
             GameObject row = MenuWidgets.Node("Row", parent);
@@ -685,13 +722,14 @@ namespace ClosingCircle.Visual.Menu
             ZonePanel.Sends(command);
         }
 
-        private static CentreMode Mode(string name)
+        private static CenterMode Mode(string name)
         {
-            if (name == "Random") return CentreMode.Random;
-            if (name == "Players") return CentreMode.Players;
-            if (name == "Fixed") return CentreMode.Fixed;
+            if (name == "Random") return CenterMode.Random;
+            if (name == "Team") return CenterMode.Team;
+            if (name == "Players") return CenterMode.Players;
+            if (name == "Fixed") return CenterMode.Fixed;
 
-            return CentreMode.Bisector;
+            return CenterMode.Bisector;
         }
 
         private static string Channels(Color colour) =>

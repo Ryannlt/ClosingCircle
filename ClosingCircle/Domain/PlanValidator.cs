@@ -53,32 +53,37 @@ namespace ClosingCircle.Domain
             return findings;
         }
 
-        // A player centre cannot be known until its stage begins, and every stage after it nests inside, so
+        // A live center cannot be known until its stage begins, and every stage after it nests inside, so
         // the preview stops there. Said up front, because a preview that draws two of five stages otherwise
         // reads as broken rather than as honest.
         private static void NotePlayerStages(List<Finding> findings, ZonePlan plan)
         {
             for (int i = 0; i < plan.Count; i++)
             {
-                if (plan.Stages[i].Mode != CentreMode.Players) continue;
+                if (!IsLive(plan.Stages[i].Mode)) continue;
 
                 Add(findings, FindingLevel.Note,
-                    $"Stage {i} closes on the players, which is not known until it starts, so preview shows " +
-                    "nothing from there on until each stage is reached.");
+                    $"Stage {i} closes on the {(plan.Stages[i].Mode == CenterMode.Team ? "teams" : "players")}, " +
+                    "which is not known until it starts, so preview shows nothing from there on until each " +
+                    "stage is reached.");
                 return;
             }
         }
+
+        // Both modes read the world when their stage begins, so everything that treats a center as unknowable
+        // ahead of time has to treat them the same.
+        private static bool IsLive(CenterMode mode) => mode == CenterMode.Team || mode == CenterMode.Players;
 
         private static void CheckStage(List<Finding> findings, ZonePlan plan, ValidationContext context, int i)
         {
             Stage stage = plan.Stages[i];
             float previous = FairLine.Previous(plan, i);
-            float allowed = CentreMath.AllowedRadius(previous, stage.Radius);
+            float allowed = CenterMath.AllowedRadius(previous, stage.Radius);
 
             if (stage.Radius >= previous)
-                Add(findings, FindingLevel.Warning, stage.Mode == CentreMode.Fixed
+                Add(findings, FindingLevel.Warning, stage.Mode == CenterMode.Fixed
                     ? $"Stage {i} radius {stage.Radius:0.#}m is not smaller than the {previous:0.#}m before it, " +
-                      "so it cannot move and its written centre will be ignored."
+                      "so it cannot move and its written center will be ignored."
                     : $"Stage {i} radius {stage.Radius:0.#}m is not smaller than the {previous:0.#}m before it, " +
                       "so its circle cannot move.");
 
@@ -97,20 +102,20 @@ namespace ClosingCircle.Domain
                 Add(findings, FindingLevel.Warning,
                     $"Stage {i} ends at {stage.ToTime:0}s, which the round never reaches, so it never finishes.");
 
-            if (stage.Mode != CentreMode.Bisector) return;
+            if (stage.Mode != CenterMode.Bisector) return;
 
             if (!context.HasBisector)
             {
                 Add(findings, FindingLevel.Error,
-                    $"Stage {i} asks for a bisector centre but no Bisector line is set.");
+                    $"Stage {i} asks for a bisector center but no Bisector line is set.");
                 return;
             }
 
             if (!FairLine.Reachable(plan, i, context.BisectorPoint, context.BisectorHeading))
             {
                 Add(findings, FindingLevel.Error, Strands(plan, i)
-                    ? $"Stage {i} can never reach the bisector: a written centre earlier in the plan puts it " +
-                      "out of range, and a written centre is never moved for you."
+                    ? $"Stage {i} can never reach the bisector: a written center earlier in the plan puts it " +
+                      "out of range, and a written center is never moved for you."
                     : $"Stage {i} can never reach the bisector. It may move {allowed:0.#}m, which is not " +
                       "enough from where the plan can get to. Widen it or move the line.");
                 return;
@@ -125,9 +130,9 @@ namespace ClosingCircle.Domain
         {
             for (int k = 0; k < i; k++)
             {
-                // Players is clamped by the same budget as Random, so it is held the same way and worth
-                // saying so for the same reason.
-                if (plan.Stages[k].Mode != CentreMode.Random && plan.Stages[k].Mode != CentreMode.Players)
+                // The live modes are clamped by the same budget as Random, so they are held the same way and
+                // worth saying so for the same reason.
+                if (plan.Stages[k].Mode != CenterMode.Random && !IsLive(plan.Stages[k].Mode))
                     continue;
 
                 float budget = FairLine.Budget(plan, k);
@@ -138,12 +143,12 @@ namespace ClosingCircle.Domain
             }
         }
 
-        // A written centre the guard will not move is the only way Reachable can fail on a plan whose radii are
+        // A written center the guard will not move is the only way Reachable can fail on a plan whose radii are
         // otherwise generous enough.
         private static bool Strands(ZonePlan plan, int index)
         {
             for (int k = 0; k < index; k++)
-                if (plan.Stages[k].Mode == CentreMode.Fixed) return true;
+                if (plan.Stages[k].Mode == CenterMode.Fixed) return true;
 
             return false;
         }

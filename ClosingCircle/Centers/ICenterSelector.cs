@@ -1,13 +1,13 @@
 using ClosingCircle.Domain;
 using UnityEngine;
 
-namespace ClosingCircle.Centres
+namespace ClosingCircle.Centers
 {
     // Everything a selector needs to place one stage, so none of them has to reach into ZoneService.
-    public struct CentreContext
+    public struct CenterContext
     {
         public int Index;
-        public Vector2 PreviousCentre;
+        public Vector2 PreviousCenter;
         public float PreviousRadius;
         public float Radius;
         public Vector2 Configured;
@@ -20,13 +20,13 @@ namespace ClosingCircle.Centres
         public Vector2 LineDirection;
     }
 
-    public interface ICentreSelector
+    public interface ICenterSelector
     {
-        CentreMode Mode { get; }
+        CenterMode Mode { get; }
 
-        // True when the centre needs nothing but the previous circle and the dice, so it can be rolled ahead of
+        // True when the center needs nothing but the previous circle and the dice, so it can be rolled ahead of
         // time and shown. A mode reading live world state cannot, and stops the walk where it sits.
         bool CanResolveEarly { get; }
-        Vector2 Resolve(CentreContext context);
+        Vector2 Resolve(CenterContext context);
     }
 }

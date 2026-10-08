@@ -3,7 +3,7 @@ using UnityEngine;
 // How far from the fair line each stage is allowed to wander. Shared by the resolver, which enforces it, and
 // the validator, which reports on it, so the two can never disagree about what fair means.
 //
-// A bisector stage can only reach the line when the centre before it is within its own allowed radius of the
+// A bisector stage can only reach the line when the center before it is within its own allowed radius of the
 // line. Working backwards from that, every earlier stage gets a budget, and those budgets GROW the further back
 // you go: a stage five steps out may wander further, because the stages between it and the fair line have room
 // to pull it back.
@@ -29,9 +29,9 @@ namespace ClosingCircle.Domain
 
             for (int i = index + 1; i < plan.Count; i++)
             {
-                float allowed = CentreMath.AllowedRadius(Previous(plan, i), plan.Stages[i].Radius);
+                float allowed = CenterMath.AllowedRadius(Previous(plan, i), plan.Stages[i].Radius);
 
-                if (plan.Stages[i].Mode == CentreMode.Bisector)
+                if (plan.Stages[i].Mode == CenterMode.Bisector)
                     return Mathf.Max(0f, carried + allowed - Margin);
 
                 carried += allowed;
@@ -40,30 +40,30 @@ namespace ClosingCircle.Domain
             return Unlimited;
         }
 
-        // The closest to the line the centre before a bisector stage could possibly be, with every stage from
+        // The closest to the line the center before a bisector stage could possibly be, with every stage from
         // the start pulling toward it as hard as it can. If even that is out of reach, no roll and no guard
         // saves the config.
         public static bool Reachable(ZonePlan plan, int index, Vector2 linePoint, float heading)
         {
             if (plan == null || index < 0 || index >= plan.Count) return true;
 
-            Vector2 direction = CentreMath.Direction(heading);
-            float distance = CentreMath.DistanceToLine(linePoint, direction, plan.StartCentre);
+            Vector2 direction = CenterMath.Direction(heading);
+            float distance = CenterMath.DistanceToLine(linePoint, direction, plan.StartCenter);
 
             for (int i = 0; i < index; i++)
             {
-                // A written centre is obeyed rather than pulled, so it sets the distance outright.
-                if (plan.Stages[i].Mode == CentreMode.Fixed)
+                // A written center is obeyed rather than pulled, so it sets the distance outright.
+                if (plan.Stages[i].Mode == CenterMode.Fixed)
                 {
-                    distance = CentreMath.DistanceToLine(linePoint, direction, plan.Stages[i].ConfiguredCentre);
+                    distance = CenterMath.DistanceToLine(linePoint, direction, plan.Stages[i].ConfiguredCenter);
                     continue;
                 }
 
-                distance = Mathf.Max(0f, distance - CentreMath.AllowedRadius(Previous(plan, i),
+                distance = Mathf.Max(0f, distance - CenterMath.AllowedRadius(Previous(plan, i),
                                                                             plan.Stages[i].Radius));
             }
 
-            return distance <= CentreMath.AllowedRadius(Previous(plan, index), plan.Stages[index].Radius);
+            return distance <= CenterMath.AllowedRadius(Previous(plan, index), plan.Stages[index].Radius);
         }
 
         public static float Previous(ZonePlan plan, int index) =>

@@ -12,11 +12,11 @@ namespace ClosingCircle.Tests
         [SetUp]
         public void Setup()
         {
-            _plan = new ZonePlan { StartRadius = 500f, StartCentre = new Vector2(256f, 256f) };
+            _plan = new ZonePlan { StartRadius = 500f, StartCenter = new Vector2(256f, 256f) };
         }
 
         private void AddStage(float from, float to, float radius, float x, float z) =>
-            _plan.Add(new Stage { FromTime = from, ToTime = to, Radius = radius, Centre = new Vector2(x, z) });
+            _plan.Add(new Stage { FromTime = from, ToTime = to, Radius = radius, Center = new Vector2(x, z) });
 
         [Test]
         public void Evaluate_WithNoStagesHoldsTheStartState()
@@ -66,7 +66,7 @@ namespace ClosingCircle.Tests
             ZoneSnapshot gap = PlanEvaluator.Evaluate(_plan, 440f);
 
             Assert.AreEqual(250f, gap.Radius, 0.001f);
-            Assert.AreEqual(256f, gap.Centre.x, 0.001f);
+            Assert.AreEqual(256f, gap.Center.x, 0.001f);
         }
 
         [Test]
@@ -78,8 +78,8 @@ namespace ClosingCircle.Tests
             ZoneSnapshot settled = PlanEvaluator.Evaluate(_plan, 5f);
 
             Assert.AreEqual(80f, settled.Radius, 0.001f);
-            Assert.AreEqual(300f, settled.Centre.x, 0.001f);
-            Assert.AreEqual(220f, settled.Centre.y, 0.001f);
+            Assert.AreEqual(300f, settled.Center.x, 0.001f);
+            Assert.AreEqual(220f, settled.Center.y, 0.001f);
         }
 
         [Test]
@@ -92,7 +92,7 @@ namespace ClosingCircle.Tests
             ZoneSnapshot midway = PlanEvaluator.Evaluate(_plan, 350f);
 
             Assert.AreEqual(165f, midway.Radius, 0.001f);
-            Assert.AreEqual(278f, midway.Centre.x, 0.001f);
+            Assert.AreEqual(278f, midway.Center.x, 0.001f);
         }
 
         [Test]

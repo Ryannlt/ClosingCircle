@@ -332,7 +332,7 @@ namespace ClosingCircle.Visual.Menu
             contentRect.anchoredPosition = Vector2.zero;
 
             // A fresh RectTransform carries Unity's default 100x100. Stretched between the viewport's edges on
-            // a centred pivot, that leftover 100 hangs 50px off each side and clips every label in the pane.
+            // a centered pivot, that leftover 100 hangs 50px off each side and clips every label in the pane.
             contentRect.sizeDelta = new Vector2(0f, contentRect.sizeDelta.y);
 
             MenuWidgets.Column(content, 0f, new RectOffset(0, 0, 0, 0));

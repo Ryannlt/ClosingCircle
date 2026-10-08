@@ -1,5 +1,5 @@
 // Which stages are worth showing. Stages resolve in order and pass in order, so the answer is always one
-// contiguous run: from the first that has not finished, to the last whose centre has actually been decided.
+// contiguous run: from the first that has not finished, to the last whose center has actually been decided.
 
 namespace ClosingCircle.Domain
 {

@@ -8,33 +8,33 @@ namespace ClosingCircle.Tests
     public class ZoneShapeTests
     {
         private const float Radius = 100f;
-        private static readonly Vector2 Centre = new Vector2(256f, 256f);
+        private static readonly Vector2 Center = new Vector2(256f, 256f);
 
         private static ZoneShape Square => new ZoneShape { Sides = 4, Rotation = 0f };
         private static ZoneShape Hexagon => new ZoneShape { Sides = 6, Rotation = 0f };
 
-        // A point at the given bearing and distance from the centre, using the mod's own convention of degrees
+        // A point at the given bearing and distance from the center, using the mod's own convention of degrees
         // clockwise from north.
         private static Vector2 At(float bearingDegrees, float distance)
         {
             float radians = bearingDegrees * Mathf.Deg2Rad;
-            return Centre + new Vector2(Mathf.Sin(radians), Mathf.Cos(radians)) * distance;
+            return Center + new Vector2(Mathf.Sin(radians), Mathf.Cos(radians)) * distance;
         }
 
         [Test]
-        public void Contains_CentreIsAlwaysInside()
+        public void Contains_CenterIsAlwaysInside()
         {
-            Assert.IsTrue(Square.Contains(Centre, Radius, Centre));
-            Assert.IsTrue(Hexagon.Contains(Centre, Radius, Centre));
-            Assert.IsTrue(ZoneShape.Circle.Contains(Centre, Radius, Centre));
+            Assert.IsTrue(Square.Contains(Center, Radius, Center));
+            Assert.IsTrue(Hexagon.Contains(Center, Radius, Center));
+            Assert.IsTrue(ZoneShape.Circle.Contains(Center, Radius, Center));
         }
 
         [Test]
         public void Contains_EdgeMidpointSitsExactlyAtTheConfiguredRadius()
         {
             // A square with rotation 0 has vertices at 0, 90, 180 and 270, so its edge midpoints are at 45.
-            Assert.IsTrue(Square.Contains(Centre, Radius, At(45f, Radius - 0.1f)));
-            Assert.IsFalse(Square.Contains(Centre, Radius, At(45f, Radius + 0.1f)));
+            Assert.IsTrue(Square.Contains(Center, Radius, At(45f, Radius - 0.1f)));
+            Assert.IsFalse(Square.Contains(Center, Radius, At(45f, Radius + 0.1f)));
         }
 
         [Test]
@@ -43,8 +43,8 @@ namespace ClosingCircle.Tests
             // The vertex direction for this square is bearing 0, and a corner sits at radius times root two.
             float justInsideCorner = Radius * Mathf.Sqrt(2f) - 0.5f;
 
-            Assert.IsTrue(Square.Contains(Centre, Radius, At(0f, justInsideCorner)));
-            Assert.IsFalse(Square.Contains(Centre, Radius, At(45f, justInsideCorner)));
+            Assert.IsTrue(Square.Contains(Center, Radius, At(0f, justInsideCorner)));
+            Assert.IsFalse(Square.Contains(Center, Radius, At(45f, justInsideCorner)));
         }
 
         [Test]
@@ -53,14 +53,14 @@ namespace ClosingCircle.Tests
             float beyond = Square.Circumradius(Radius) + 0.1f;
 
             for (float bearing = 0f; bearing < 360f; bearing += 7f)
-                Assert.IsFalse(Square.Contains(Centre, Radius, At(bearing, beyond)), $"bearing {bearing}");
+                Assert.IsFalse(Square.Contains(Center, Radius, At(bearing, beyond)), $"bearing {bearing}");
         }
 
         [Test]
         public void Contains_EverythingInsideTheInradiusIsInside()
         {
             for (float bearing = 0f; bearing < 360f; bearing += 7f)
-                Assert.IsTrue(Hexagon.Contains(Centre, Radius, At(bearing, Radius - 0.1f)), $"bearing {bearing}");
+                Assert.IsTrue(Hexagon.Contains(Center, Radius, At(bearing, Radius - 0.1f)), $"bearing {bearing}");
         }
 
         [Test]
@@ -69,35 +69,35 @@ namespace ClosingCircle.Tests
             var turned = new ZoneShape { Sides = 4, Rotation = 45f };
 
             // Rotating by half a step swaps which bearings are corners and which are edge midpoints.
-            Assert.IsFalse(turned.Contains(Centre, Radius, At(0f, Radius + 0.1f)));
-            Assert.IsTrue(turned.Contains(Centre, Radius, At(45f, Radius + 0.1f)));
+            Assert.IsFalse(turned.Contains(Center, Radius, At(0f, Radius + 0.1f)));
+            Assert.IsTrue(turned.Contains(Center, Radius, At(45f, Radius + 0.1f)));
         }
 
         [Test]
         public void Vertices_SitOnTheCircumradiusAndTheirMidpointsOnTheRadius()
         {
-            Vector2[] points = Hexagon.Vertices(Centre, Radius);
+            Vector2[] points = Hexagon.Vertices(Center, Radius);
             Assert.AreEqual(6, points.Length);
 
             for (int i = 0; i < points.Length; i++)
             {
-                Assert.AreEqual(Hexagon.Circumradius(Radius), Vector2.Distance(Centre, points[i]), 0.001f);
+                Assert.AreEqual(Hexagon.Circumradius(Radius), Vector2.Distance(Center, points[i]), 0.001f);
 
                 Vector2 midpoint = (points[i] + points[(i + 1) % points.Length]) * 0.5f;
-                Assert.AreEqual(Radius, Vector2.Distance(Centre, midpoint), 0.001f);
+                Assert.AreEqual(Radius, Vector2.Distance(Center, midpoint), 0.001f);
             }
         }
 
         // The bug this replaced: the pusher clamped to a circle, which on a square drags somebody toward the
-        // centre instead of back through the face they crossed.
+        // center instead of back through the face they crossed.
         [Test]
-        public void NearestInside_ComesBackThroughTheFaceNotTowardTheCentre()
+        public void NearestInside_ComesBackThroughTheFaceNotTowardTheCenter()
         {
             const float inset = 2f;
 
             // Straight out along a face normal, so the way back is straight in along it.
             Vector2 outside = At(45f, 200f);
-            Vector2 back = Square.NearestInside(Centre, Radius, outside, inset);
+            Vector2 back = Square.NearestInside(Center, Radius, outside, inset);
 
             Assert.AreEqual(At(45f, Radius - inset).x, back.x, 0.1f);
             Assert.AreEqual(At(45f, Radius - inset).y, back.y, 0.1f);
@@ -109,7 +109,7 @@ namespace ClosingCircle.Tests
         {
             const float inset = 2f;
 
-            Vector2 back = Square.NearestInside(Centre, Radius, At(0f, 300f), inset);
+            Vector2 back = Square.NearestInside(Center, Radius, At(0f, 300f), inset);
             Vector2 corner = At(0f, Square.Circumradius(Radius - inset));
 
             Assert.AreEqual(corner.x, back.x, 0.1f);
@@ -128,9 +128,9 @@ namespace ClosingCircle.Tests
                 {
                     foreach (float distance in new[] { 101f, 130f, 250f })
                     {
-                        Vector2 back = shape.NearestInside(Centre, Radius, At(bearing, distance), inset);
+                        Vector2 back = shape.NearestInside(Center, Radius, At(bearing, distance), inset);
 
-                        Assert.IsTrue(shape.Contains(Centre, Radius, back),
+                        Assert.IsTrue(shape.Contains(Center, Radius, back),
                                       $"{shape.Sides}-gon at {bearing} deg, {distance}m");
                     }
                 }
@@ -142,8 +142,8 @@ namespace ClosingCircle.Tests
         {
             Vector2 inside = At(30f, 50f);
 
-            Assert.AreEqual(inside, Square.NearestInside(Centre, Radius, inside, 2f));
-            Assert.AreEqual(inside, ZoneShape.Circle.NearestInside(Centre, Radius, inside, 2f));
+            Assert.AreEqual(inside, Square.NearestInside(Center, Radius, inside, 2f));
+            Assert.AreEqual(inside, ZoneShape.Circle.NearestInside(Center, Radius, inside, 2f));
         }
 
         [Test]

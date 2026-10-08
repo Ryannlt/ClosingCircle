@@ -10,11 +10,11 @@ namespace ClosingCircle.Tests
         // 780-740, 660-620, 540-500. Gaps of 80s between them.
         private static ZonePlan Plan()
         {
-            var plan = new ZonePlan { StartRadius = 250f, StartCentre = Vector2.zero };
+            var plan = new ZonePlan { StartRadius = 250f, StartCenter = Vector2.zero };
 
-            plan.Add(new Stage { FromTime = 780f, ToTime = 740f, Radius = 150f, Mode = CentreMode.Random });
-            plan.Add(new Stage { FromTime = 660f, ToTime = 620f, Radius = 90f, Mode = CentreMode.Random });
-            plan.Add(new Stage { FromTime = 540f, ToTime = 500f, Radius = 50f, Mode = CentreMode.Random });
+            plan.Add(new Stage { FromTime = 780f, ToTime = 740f, Radius = 150f, Mode = CenterMode.Random });
+            plan.Add(new Stage { FromTime = 660f, ToTime = 620f, Radius = 90f, Mode = CenterMode.Random });
+            plan.Add(new Stage { FromTime = 540f, ToTime = 500f, Radius = 50f, Mode = CenterMode.Random });
 
             return plan;
         }

@@ -4,24 +4,24 @@ using HoldfastSharedMethods;
 using System.Collections.Generic;
 using UnityEngine;
 
-// Closes on where the players actually are: each faction's centre of mass, then the point between them.
+// Closes between the two sides: each faction's center of mass, then the point between them.
 //
-// The only mode that reads live world state, so it is the only one that cannot be rolled in advance. That has
-// two consequences the rest of the mod already handles: the resolver stops its walk here, and the preview
-// therefore shows nothing beyond this stage rather than guessing at it.
+// Reads live world state, so it cannot be rolled in advance. That has two consequences the rest of the mod
+// already handles: the resolver stops its walk here, and the preview therefore shows nothing beyond this
+// stage rather than guessing at it. PlayersCenter is the same idea without the sides.
 //
 // Nesting and the bisector budget are applied by the resolver to whatever this returns, so a stage placed here
 // is still reachable from the previous circle and still leaves a later Bisector stage able to reach its line.
 
-namespace ClosingCircle.Centres
+namespace ClosingCircle.Centers
 {
-    public class PlayersCentre : ICentreSelector
+    public class TeamCenter : ICenterSelector
     {
-        public CentreMode Mode => CentreMode.Players;
+        public CenterMode Mode => CenterMode.Team;
 
         public bool CanResolveEarly => false;
 
-        public Vector2 Resolve(CentreContext context)
+        public Vector2 Resolve(CenterContext context)
         {
             var attackers = new List<Vector2>();
             var defenders = new List<Vector2>();
@@ -43,20 +43,20 @@ namespace ClosingCircle.Centres
                 else defenders.Add(position);
             }
 
-            Vector2 centre = TeamCentre.Midpoint(attackers, defenders, context.PreviousCentre);
+            Vector2 center = CenterOfMass.Midpoint(attackers, defenders, context.PreviousCenter);
 
-            Describe(context.Index, attackers.Count, defenders.Count, centre);
-            return centre;
+            Describe(context.Index, attackers.Count, defenders.Count, center);
+            return center;
         }
 
-        // Said out loud because a centre that came from a fallback rather than from the players is exactly the
+        // Said out loud because a center that came from a fallback rather than from the players is exactly the
         // thing that looks like a bug three rounds later.
-        private static void Describe(int index, int attackers, int defenders, Vector2 centre)
+        private static void Describe(int index, int attackers, int defenders, Vector2 center)
         {
             if (attackers == 0 && defenders == 0)
             {
-                Logger.Log($"Stage {index} asks for a player centre but nobody is alive. Holding the previous " +
-                           "centre.", LogLevel.WARNING);
+                Logger.Log($"Stage {index} asks for a player center but nobody is alive. Holding the previous " +
+                           "center.", LogLevel.WARNING);
                 return;
             }
 
@@ -69,7 +69,7 @@ namespace ClosingCircle.Centres
             }
 
             Logger.Log($"Stage {index}: closing between {attackers} and {defenders} players, " +
-                       $"at ({centre.x:0.#}, {centre.y:0.#}).", LogLevel.INFO);
+                       $"at ({center.x:0.#}, {center.y:0.#}).", LogLevel.INFO);
         }
     }
 }

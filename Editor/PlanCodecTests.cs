@@ -12,10 +12,10 @@ namespace ClosingCircle.Tests
     public class PlanCodecTests
     {
         private static Stage MakeStage(float from, float to, float radius, float x, float z,
-                                      bool resolved = false, CentreMode mode = CentreMode.Fixed) =>
+                                      bool resolved = false, CenterMode mode = CenterMode.Fixed) =>
             new Stage
             {
-                FromTime = from, ToTime = to, Radius = radius, Centre = new Vector2(x, z), Resolved = resolved,
+                FromTime = from, ToTime = to, Radius = radius, Center = new Vector2(x, z), Resolved = resolved,
                 Mode = mode
             };
 
@@ -36,7 +36,7 @@ namespace ClosingCircle.Tests
                 Sides = 64,
                 Rotation = 15f,
                 StartRadius = 200f,
-                StartCentre = new Vector2(-12.5f, 7.25f),
+                StartCenter = new Vector2(-12.5f, 7.25f),
                 Stages = stages,
                 ColorR = 255,
                 ColorG = 60,
@@ -60,15 +60,15 @@ namespace ClosingCircle.Tests
             Assert.AreEqual(original.Sides, back.Sides);
             Assert.AreEqual(original.Rotation, back.Rotation, 0.001f);
             Assert.AreEqual(original.StartRadius, back.StartRadius, 0.001f);
-            Assert.AreEqual(original.StartCentre.x, back.StartCentre.x, 0.001f);
-            Assert.AreEqual(original.StartCentre.y, back.StartCentre.y, 0.001f);
+            Assert.AreEqual(original.StartCenter.x, back.StartCenter.x, 0.001f);
+            Assert.AreEqual(original.StartCenter.y, back.StartCenter.y, 0.001f);
             Assert.AreEqual(original.ColorR, back.ColorR);
             Assert.AreEqual(original.OpacityPercent, back.OpacityPercent, 0.001f);
             Assert.AreEqual(original.Height, back.Height, 0.001f);
             Assert.AreEqual(original.Fade, back.Fade, 0.001f);
             Assert.AreEqual(2, back.Stages.Count);
             Assert.AreEqual(40f, back.Stages[1].Radius, 0.001f);
-            Assert.AreEqual(30f, back.Stages[1].Centre.x, 0.001f);
+            Assert.AreEqual(30f, back.Stages[1].Center.x, 0.001f);
             Assert.IsTrue(back.Stages[0].Resolved);
             Assert.IsFalse(back.Stages[1].Resolved);
         }
@@ -77,11 +77,14 @@ namespace ClosingCircle.Tests
         // was left off the wire entirely, so every stage arrived as Fixed and the panel misreported the plan,
         // and a round trip that only checked times and radii had nothing to say about it.
         [Test]
-        public void EveryCentreModeSurvivesTheRoundTrip()
+        public void EveryCenterModeSurvivesTheRoundTrip()
         {
-            var modes = new[] { CentreMode.Fixed, CentreMode.Bisector, CentreMode.Random, CentreMode.Players };
+            var modes = new[]
+            {
+                CenterMode.Fixed, CenterMode.Bisector, CenterMode.Random, CenterMode.Team, CenterMode.Players
+            };
 
-            foreach (CentreMode mode in modes)
+            foreach (CenterMode mode in modes)
             {
                 ZoneState state = MakeState(1);
 
@@ -125,7 +128,7 @@ namespace ClosingCircle.Tests
 
                 Assert.IsTrue(payload.Contains("-12.5"), payload);
                 Assert.IsTrue(PlanCodec.TryDecode(payload, out ZoneState back));
-                Assert.AreEqual(-12.5f, back.StartCentre.x, 0.001f);
+                Assert.AreEqual(-12.5f, back.StartCenter.x, 0.001f);
             }
             finally
             {

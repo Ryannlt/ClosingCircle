@@ -84,10 +84,10 @@ Shader "ClosingCircle/Wall"
 
             half3 Frost (float2 screenUV, float wallEye, half amount)
             {
-                half3 centre = SampleSceneColor(screenUV);
+                half3 center = SampleSceneColor(screenUV);
 
                 float spread = amount * _BlurRadius;
-                if (spread <= 0.0) return centre;
+                if (spread <= 0.0) return center;
 
                 // Rotated per pixel. A fixed ring puts every tap in the same handful of directions on every
                 // pixel, which the eye reads as ghost copies of an object rather than as blur; scattering the
@@ -115,7 +115,7 @@ Shader "ClosingCircle/Wall"
 
                     // A tap nearer than the wall belongs to something between the camera and the boundary.
                     // Smearing that across the wall is what made trees inside the circle look doubled.
-                    half3 colour = eye < wallEye - DEPTH_SLACK ? centre : SampleSceneColor(uv);
+                    half3 colour = eye < wallEye - DEPTH_SLACK ? center : SampleSceneColor(uv);
 
                     // Falling off toward the rim is the difference between a gaussian and a box average.
                     half w = exp(-2.0 * radius * radius);

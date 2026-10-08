@@ -143,7 +143,7 @@ namespace ClosingCircle.Tests
 
         private static readonly string[] ConfigKeys =
         {
-            "EnableCircle", "EnableDebugLogging", "Shape", "Rotation", "StartRadius", "StartCentre",
+            "EnableCircle", "EnableDebugLogging", "Shape", "Rotation", "StartRadius", "StartCenter",
             "AddStage", "Damage", "RepeatSeconds", "Solid", "Hud", "Color", "Opacity", "Height", "Fade",
             "Blur", "Announce", "Bisector", "Spread"
         };

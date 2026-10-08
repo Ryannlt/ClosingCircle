@@ -58,7 +58,7 @@ namespace ClosingCircle.Visual
             float floor = _groundLow - BuryDepth;
             float total = Mathf.Max(top - floor, 0.01f);
 
-            _object.transform.position = new Vector3(zone.Centre.x, floor, zone.Centre.y);
+            _object.transform.position = new Vector3(zone.Center.x, floor, zone.Center.y);
             _object.transform.localScale = new Vector3(zone.Radius, total, zone.Radius);
 
             // Map the mesh's own 0..1 height onto the ramp so its zero point lands exactly at ground level.
@@ -112,9 +112,9 @@ namespace ClosingCircle.Visual
 
             ZoneShape shape = ZoneService.Shape;
             int stride = Mathf.Max(1, shape.Sides / MaxTerrainSamples);
-            Vector2[] ring = shape.Vertices(zone.Centre, zone.Radius);
+            Vector2[] ring = shape.Vertices(zone.Center, zone.Radius);
 
-            float low = TerrainSampler.GetYAt(zone.Centre);
+            float low = TerrainSampler.GetYAt(zone.Center);
             float high = low;
 
             for (int i = 0; i < ring.Length; i += stride)

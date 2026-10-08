@@ -28,7 +28,7 @@ namespace ClosingCircle.Sync
               .Append(',').Append(state.Hud ? 1 : 0).Append(',').Append(state.ForceDisplay ? 1 : 0);
             sb.Append("|sh:").Append(state.Sides).Append(',').Append(N(state.Rotation));
             sb.Append("|st:").Append(N(state.StartRadius)).Append(',')
-              .Append(N(state.StartCentre.x)).Append(',').Append(N(state.StartCentre.y));
+              .Append(N(state.StartCenter.x)).Append(',').Append(N(state.StartCenter.y));
             sb.Append("|lk:").Append(state.ColorR).Append(',').Append(state.ColorG).Append(',')
               .Append(state.ColorB).Append(',').Append(N(state.OpacityPercent)).Append(',')
               .Append(N(state.Height)).Append(',').Append(N(state.Fade)).Append(',')
@@ -39,8 +39,8 @@ namespace ClosingCircle.Sync
                 foreach (Stage stage in state.Stages)
                 {
                     sb.Append("|s:").Append(N(stage.FromTime)).Append(',').Append(N(stage.ToTime)).Append(',')
-                      .Append(N(stage.Radius)).Append(',').Append(N(stage.Centre.x)).Append(',')
-                      .Append(N(stage.Centre.y)).Append(',').Append(stage.Resolved ? 1 : 0).Append(',')
+                      .Append(N(stage.Radius)).Append(',').Append(N(stage.Center.x)).Append(',')
+                      .Append(N(stage.Center.y)).Append(',').Append(stage.Resolved ? 1 : 0).Append(',')
                       .Append((int)stage.Mode);
                 }
             }
@@ -85,7 +85,7 @@ namespace ClosingCircle.Sync
                         if (v.Length != 3) return false;
                         if (!F(v[0], out state.StartRadius)) return false;
                         if (!F(v[1], out float sx) || !F(v[2], out float sz)) return false;
-                        state.StartCentre = new Vector2(sx, sz);
+                        state.StartCenter = new Vector2(sx, sz);
                         break;
 
                     case "lk":
@@ -106,15 +106,15 @@ namespace ClosingCircle.Sync
                         if (!F(v[1], out stage.ToTime)) return false;
                         if (!F(v[2], out stage.Radius)) return false;
                         if (!F(v[3], out float cx) || !F(v[4], out float cz)) return false;
-                        stage.Centre = new Vector2(cx, cz);
+                        stage.Center = new Vector2(cx, cz);
 
-                        // Carried so the preview can tell a decided centre from one still to be rolled.
+                        // Carried so the preview can tell a decided center from one still to be rolled.
                         stage.Resolved = v[5] == "1";
 
                         // Nothing client side acts on the mode, but the panel names it, and without this every
                         // stage decoded as Fixed and the Stages tab misreported the whole plan.
                         if (!int.TryParse(v[6], NumberStyles.Integer, Invariant, out int mode)) return false;
-                        stage.Mode = (CentreMode)mode;
+                        stage.Mode = (CenterMode)mode;
 
                         if (!stage.IsValid) return false;
                         state.Stages.Add(stage);

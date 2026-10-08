@@ -52,13 +52,13 @@ namespace ClosingCircle.Domain
         public static string SetBisector(Vector2 point, float heading) =>
             Set("Bisector", $"{N(point.x)},{N(point.y)},{N(heading)}");
 
-        public static string AddStage(float from, float to, float radius, CentreMode mode) =>
+        public static string AddStage(float from, float to, float radius, CenterMode mode) =>
             $"{Prefix} stage add {N(from)} {N(to)} {N(radius)} {mode}";
 
-        // A written centre replaces the mode rather than sitting beside it, so these two overloads are the
+        // A written center replaces the mode rather than sitting beside it, so these two overloads are the
         // whole vocabulary.
-        public static string AddStage(float from, float to, float radius, Vector2 centre) =>
-            $"{Prefix} stage add {N(from)} {N(to)} {N(radius)} {N(centre.x)} {N(centre.y)}";
+        public static string AddStage(float from, float to, float radius, Vector2 center) =>
+            $"{Prefix} stage add {N(from)} {N(to)} {N(radius)} {N(center.x)} {N(center.y)}";
 
         public static string RemoveStage(int index) => $"{Prefix} stage remove {index}";
 

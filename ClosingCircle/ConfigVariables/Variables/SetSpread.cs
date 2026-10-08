@@ -1,7 +1,7 @@
 using ClosingCircle.Domain;
 using UnityEngine;
 
-// How much of the legal range a randomised centre may use. 0 puts the zone in the same place every round,
+// How much of the legal range a randomised center may use. 0 puts the zone in the same place every round,
 // 1 uses all of it, which makes this the number a league publishes.
 
 namespace ClosingCircle.ConfigVariables

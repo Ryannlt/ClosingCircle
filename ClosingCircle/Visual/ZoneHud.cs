@@ -150,7 +150,7 @@ namespace ClosingCircle.Visual
             _size.Apply($"CIRCLE RADIUS {zone.Radius:0}M");
             _stage.Apply(DescribeSchedule(timeRemaining));
 
-            // Centred as a pair, so the radius pill sits in the middle on its own once the last stage is done.
+            // Centered as a pair, so the radius pill sits in the middle on its own once the last stage is done.
             float gap = _stage.Visible ? Gap : 0f;
             float total = _size.Width + gap + _stage.Width;
 

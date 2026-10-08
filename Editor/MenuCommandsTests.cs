@@ -32,10 +32,10 @@ namespace ClosingCircle.Tests
         public void AModeReplacesTheCoordinatesRatherThanJoiningThem()
         {
             Assert.AreEqual("rc closingCircle stage add 540 480 100 Bisector",
-                            MenuCommands.AddStage(540f, 480f, 100f, CentreMode.Bisector));
+                            MenuCommands.AddStage(540f, 480f, 100f, CenterMode.Bisector));
 
             Assert.AreEqual("rc closingCircle stage add 420 360 40 Random",
-                            MenuCommands.AddStage(420f, 360f, 40f, CentreMode.Random));
+                            MenuCommands.AddStage(420f, 360f, 40f, CenterMode.Random));
 
             Assert.AreEqual("rc closingCircle stage add 540 480 100 30 20",
                             MenuCommands.AddStage(540f, 480f, 100f, new Vector2(30f, 20f)));
